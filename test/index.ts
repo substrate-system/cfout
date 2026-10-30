@@ -458,3 +458,15 @@ test('the node:assert module exits 1 without nodejs_compat', async t => {
     t.ok(stdout.split('\n').some(line => /^not ok\b/.test(line)),
         'stdout has a not ok line')
 })
+
+test('--compat-flag can be given more than once', async t => {
+    const { exitCode, stdout } = await run('_compat-echo.js', [
+        '--compat-flag', 'nodejs_compat',
+        '--compat-flag', 'no_global_navigator',
+    ])
+    t.equal(exitCode, 0, 'should exit 0')
+    const line = stdout.split('\n').find(l => l.startsWith('# compat '))
+    const compat = line ? JSON.parse(line.slice('# compat '.length)) : null
+    t.deepEqual(compat, { process: true, navigator: false },
+        'both flags take effect')
+})
