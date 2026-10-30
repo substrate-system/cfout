@@ -1,0 +1,3 @@
+console.log('ok 1 - a')
+console.log('ok 2 - b')
+console.log('1..2')

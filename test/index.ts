@@ -12,6 +12,7 @@ const RUN_LIMIT_MS = 4000
 
 interface RunResult {
     exitCode:number|null;
+    signal:NodeJS.Signals|null;
     stdout:string;
     stderr:string;
 }
@@ -45,9 +46,9 @@ function runSource (source:string, args:string[] = []):Promise<RunResult> {
         child.stdout.on('data', (d) => { stdout += d.toString() })
         child.stderr.on('data', (d) => { stderr += d.toString() })
         child.on('error', reject)
-        child.on('close', (exitCode) => {
+        child.on('close', (exitCode, signal) => {
             clearTimeout(timer)
-            resolve({ exitCode, stdout, stderr })
+            resolve({ exitCode, signal, stdout, stderr })
         })
         child.stdin.end(source)
     })
@@ -216,3 +217,101 @@ test('--var without = or with an empty key exits 1 with an error',
             t.equal(stdout, '', 'nothing should run')
         }
     })
+test('a plan after the test points ends the run', async t => {
+    const { exitCode, stdout } = await run('_plan-after.js')
+    t.equal(exitCode, 0, 'should exit 0 without testsFinished')
+    t.ok(stdout.split('\n').includes('1..2'), 'stdout has the plan')
+})
+
+test('a plan before the test points ends the run after N of them',
+    async t => {
+        const { exitCode, stdout } = await run('_plan-before.js')
+        t.equal(exitCode, 0, 'should exit 0 without testsFinished')
+        t.ok(stdout.split('\n').includes('ok 2 - b'),
+            'stdout has the last test point')
+    })
+
+/**
+ * Does stdout have a top-level `not ok` line naming the plan mismatch?
+ */
+function hasMismatch (stdout:string, planned:number, ran:number):boolean {
+    return stdout.split('\n').some(line => (
+        /^not ok\b/.test(line) &&
+        line.includes(`planned ${planned}`) &&
+        line.includes(`ran ${ran}`)
+    ))
+}
+
+test('fewer test points than planned is reported when testsFinished ends ' +
+    'the run', async t => {
+    const { exitCode, stdout } = await run('_plan-short.js')
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(hasMismatch(stdout, 3, 2), 'stdout reports the plan mismatch')
+})
+
+test('more test points than a trailing plan is reported', async t => {
+    const { exitCode, stdout } = await run('_plan-extra.js')
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(hasMismatch(stdout, 2, 3), 'stdout reports the plan mismatch')
+})
+
+test('a 1..0 plan with a SKIP directive passes', async t => {
+    const { exitCode } = await run('_plan-skip.js')
+    t.equal(exitCode, 0, 'should exit 0')
+})
+
+test('an indented subtest plan does not end the run', async t => {
+    const { exitCode, stdout } = await run('_plan-subtest.js')
+    t.equal(exitCode, 0, 'should exit 0')
+    const lines = stdout.split('\n')
+    t.ok(lines.includes('ok 1 - outer'), 'stdout has the outer test point')
+    t.ok(lines.includes('1..1'), 'stdout has the top-level plan')
+})
+
+test('a not ok line fails a run that matches its plan', async t => {
+    const { exitCode } = await run('_plan-fail.js')
+    t.equal(exitCode, 1, 'should exit 1')
+
+    const { summary } = await runTestsInWorker(await bundle('_plan-fail.js'))
+    t.equal(summary.reason, 'plan', 'should complete by the plan rule')
+    t.equal(summary.notOk, 1, 'should count the failing test point')
+})
+
+test('a module that never finishes exits 1 at --timeout', async t => {
+    const { exitCode, signal, stdout, stderr } = await run('_hang.js',
+        ['--timeout', '500'])
+    t.equal(exitCode, 1, 'should exit 1')
+    t.equal(signal, null, 'cfout should exit by itself, not be killed')
+    t.ok(stdout.split('\n').includes('ok 1 - before the hang'),
+        'the line printed before the hang is on stdout')
+    t.ok(/timed out/i.test(stderr), 'stderr has a timeout message')
+})
+
+test('-t is the same as --timeout', async t => {
+    const { exitCode, signal, stdout, stderr } = await run('_hang.js',
+        ['-t', '500'])
+    t.equal(exitCode, 1, 'should exit 1')
+    t.equal(signal, null, 'cfout should exit by itself, not be killed')
+    t.ok(stdout.split('\n').includes('ok 1 - before the hang'),
+        'the line printed before the hang is on stdout')
+    t.ok(/timed out/i.test(stderr), 'stderr has a timeout message')
+})
+
+test('a run that finishes before the timeout exits 0', async t => {
+    const { exitCode, stderr } = await run('_pass.js', ['--timeout', '3000'])
+    t.equal(exitCode, 0, 'should exit 0')
+    t.ok(!/timed out/i.test(stderr), 'stderr has no timeout message')
+})
+
+test('a bad --timeout value prints an error and exits 1', async t => {
+    for (const args of [
+        ['--timeout', 'abc'],
+        ['--timeout', '-1'],
+        ['--timeout'],
+    ]) {
+        const { exitCode, stderr } = await runSource('', args)
+        t.equal(exitCode, 1, `${args.join(' ')} should exit 1`)
+        t.ok(stderr.includes('Error:'),
+            `${args.join(' ')} should print an error`)
+    }
+})
