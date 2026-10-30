@@ -40,6 +40,12 @@ Single-context layout. See `docs/agents/domain.md`.
   `accept-encoding: identity`, and the compressor holds everything until
   the stream closes. Keep that header on the dispatch or nothing streams
   before completion (a timed-out run would print nothing).
+- The entry worker queues `setTimeout`/`setInterval` calls made during
+  module evaluation and replays them after the import resolves. Queued
+  calls return negative fake ids; `clearTimeout`/`clearInterval` stay
+  wrapped for the whole run to translate them. workerd builtins called
+  with a different `this` throw, so keep saved timer functions bound to
+  `globalThis` (a call like `real.setTimeout(...)` breaks every run).
 - Top-level `await` in the user module currently gets the request
   cancelled with no output.
 
@@ -63,6 +69,9 @@ Single-context layout. See `docs/agents/domain.md`.
 - To read worker-side state in a test, have a fixture log it as JSON
   on a `# ...` comment line and parse that line from stdout (see
   `_env-echo.js`).
+- When mutating source to prove a test can fail, back the file up
+  (`cp`) and restore from the backup. `git checkout <file>` also throws
+  away any uncommitted implementation in it.
 - To prove a test that passes on first run can fail, break the source
   temporarily, then run the raw TAP:
   `npm run build && npx esbuild test/index.ts --bundle --format=esm

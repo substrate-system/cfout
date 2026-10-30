@@ -113,8 +113,8 @@ export default {
 
         // Global scope forbids timers, so calls made while the user
         // module evaluates are queued and replayed with the real timers
-        // once the import resolves, inside the request.
-        // bound, since workerd rejects a call with another \`this\`
+        // once the import resolves, inside the request. The real timers
+        // are bound, since workerd rejects a call with another \`this\`.
         const real = {
             setTimeout: globalThis.setTimeout.bind(globalThis),
             setInterval: globalThis.setInterval.bind(globalThis),
