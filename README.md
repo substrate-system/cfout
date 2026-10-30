@@ -23,7 +23,29 @@ reflects the result. There is no config file. Flags mirror
 same thing for browsers.
 
 <details><summary><h2>Contents</h2></summary>
+
 <!-- toc -->
+
+- [Install](#install)
+- [Example](#example)
+- [Input](#input)
+- [CLI](#cli)
+  * [`-t, --timeout `](#-t---timeout-)
+  * [`--compat-date `](#--compat-date-)
+  * [`--compat-flag `](#--compat-flag-)
+  * [`--var `](#--var-)
+  * [`-h, --help`](#-h---help)
+- [Output](#output)
+- [Completion](#completion)
+  * [Exit code](#exit-code)
+- [Variables](#variables)
+- [What is shimmed](#what-is-shimmed)
+- [Known limitations](#known-limitations)
+- [API](#api)
+- [License](#license)
+
+<!-- tocstop -->
+
 </details>
 
 ## Install
@@ -40,9 +62,6 @@ which brings the workerd binary. wrangler is not needed.
 ```sh
 npx esbuild --bundle test/index.ts --format=esm | npx cfout | npx tap-spec
 ```
-
-With a test file written with
-[tapzero](https://github.com/substrate-system/tapzero):
 
 ```ts
 // test/index.ts

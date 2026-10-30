@@ -19,56 +19,6 @@ interface RunResult {
     stderr:string;
 }
 
-/**
- * Bundle a fixture from `test/` with esbuild and pipe it into the
- * built CLI.
- */
-async function run (
-    fixture:string,
-    args:string[] = [],
-    opts:BundleOptions = {}
-):Promise<RunResult> {
-    const source = await bundle(fixture, opts)
-    return runSource(source, args)
-}
-
-interface BundleOptions {
-    /** Leave `node:*` imports external, as cfout's input contract says */
-    nodeExternal?:boolean;
-}
-
-async function bundle (
-    fixture:string,
-    opts:BundleOptions = {}
-):Promise<string> {
-    const result = await build({
-        entryPoints: [path.join(ROOT, 'test', fixture)],
-        bundle: true,
-        format: 'esm',
-        write: false,
-        external: opts.nodeExternal ? ['node:*'] : [],
-    })
-    return result.outputFiles[0].text
-}
-
-function runSource (source:string, args:string[] = []):Promise<RunResult> {
-    return new Promise((resolve, reject) => {
-        const child = spawn('node', [CLI, ...args], { cwd: ROOT })
-        // a run that never completes has to be stopped from outside
-        const timer = setTimeout(() => child.kill(), RUN_LIMIT_MS)
-        let stdout = ''
-        let stderr = ''
-        child.stdout.on('data', (d) => { stdout += d.toString() })
-        child.stderr.on('data', (d) => { stderr += d.toString() })
-        child.on('error', reject)
-        child.on('close', (exitCode, signal) => {
-            clearTimeout(timer)
-            resolve({ exitCode, signal, stdout, stderr })
-        })
-        child.stdin.end(source)
-    })
-}
-
 test('a passing module exits 0 with its TAP on stdout', async t => {
     const { exitCode, stdout } = await run('_pass.js')
     t.equal(exitCode, 0, 'should exit 0')
@@ -528,3 +478,50 @@ test('a bad --compat-date value prints an error and exits 1', async t => {
         t.equal(stdout, '', 'nothing should run')
     }
 })
+
+interface BundleOptions {
+    /** Leave `node:*` imports external, as cfout's input contract says */
+    nodeExternal?:boolean;
+}
+
+async function bundle (fixture:string, opts:BundleOptions = {}):Promise<string> {
+    const result = await build({
+        entryPoints: [path.join(ROOT, 'test', fixture)],
+        bundle: true,
+        format: 'esm',
+        write: false,
+        external: opts.nodeExternal ? ['node:*'] : [],
+    })
+    return result.outputFiles[0].text
+}
+
+function runSource (source:string, args:string[] = []):Promise<RunResult> {
+    return new Promise((resolve, reject) => {
+        const child = spawn('node', [CLI, ...args], { cwd: ROOT })
+        // a run that never completes has to be stopped from outside
+        const timer = setTimeout(() => child.kill(), RUN_LIMIT_MS)
+        let stdout = ''
+        let stderr = ''
+        child.stdout.on('data', (d) => { stdout += d.toString() })
+        child.stderr.on('data', (d) => { stderr += d.toString() })
+        child.on('error', reject)
+        child.on('close', (exitCode, signal) => {
+            clearTimeout(timer)
+            resolve({ exitCode, signal, stdout, stderr })
+        })
+        child.stdin.end(source)
+    })
+}
+
+/**
+ * Bundle a fixture from `test/` with esbuild and pipe it into the
+ * built CLI.
+ */
+async function run (
+    fixture:string,
+    args:string[] = [],
+    opts:BundleOptions = {}
+):Promise<RunResult> {
+    const source = await bundle(fixture, opts)
+    return runSource(source, args)
+}

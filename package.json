@@ -1,16 +1,8 @@
 {
   "name": "@substrate-system/cfout",
   "version": "0.0.0",
-  "description": "Run piped tests in the Cloudflare Workers runtime",
+  "description": "Tests in the Cloudflare Workers runtime",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "bin": {
-    "cfout": "dist/cli.js"
-  },
-  "files": [
-    "dist/*"
-  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -18,9 +10,18 @@
     },
     "./package.json": "./package.json"
   },
-  "engines": {
-    "node": ">=22"
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "cfout": "dist/cli.js"
   },
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "files": [
+    "dist/*"
+  ],
   "scripts": {
     "lint": "eslint \"./**/*.{ts,js}\"",
     "build": "mkdir -p ./dist && rm -rf ./dist/* && npm run build-esm && npm run build-types",
@@ -28,7 +29,10 @@
     "build-types": "tsc --emitDeclarationOnly --project tsconfig.build.json",
     "pretest": "npm run build",
     "test": "esbuild test/index.ts --bundle --format=esm --platform=node --packages=external | node --input-type=module | tap-spec",
+    "toc": "markdown-toc --maxdepth 3 -i README.md",
     "preversion": "npm run lint",
+    "postversion": "git push --follow-tags && npm publish",
+    "version": "npm run toc && auto-changelog -p --template keepachangelog --breaking-pattern 'BREAKING CHANGE:' && git add CHANGELOG.md README.md",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
@@ -39,10 +43,26 @@
     "@types/node": "^22.20.5",
     "esbuild": "^0.28.2",
     "eslint": "^10.14.0",
+    "markdown-toc": "^1.2.0",
     "newneostandard": "^0.14.3",
     "nightralph": "^0.1.4",
     "tap-spec": "^5.0.0",
     "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "cloudflare",
+    "test"
+  ],
+  "homepage": "https://github.com/substrate-system/cfout#readme",
+  "bugs": {
+    "url": "https://github.com/substrate-system/cfout/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/substrate-system/cfout.git"
   },
   "author": "nichoth",
   "license": "SEE LICENSE IN LICENSE"
