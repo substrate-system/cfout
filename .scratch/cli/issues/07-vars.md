@@ -15,9 +15,9 @@ style.
 bindings to Miniflare), `src/entry-worker.ts` (assign
 `globalThis.env`), `test/index.ts`, new fixture under `test/`
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A module that checks `globalThis.env.FOO === 'bar'` passes when
+- [x] A module that checks `globalThis.env.FOO === 'bar'` passes when
       run with `--var FOO=bar` and fails without it
 - [x] Two `--var` flags are both visible on `globalThis.env`
 - [x] `--var A=b=c` makes `globalThis.env.A` equal `b=c`

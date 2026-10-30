@@ -20,16 +20,16 @@ Fixtures print raw TAP with `console.log`; no timers needed.
 **Touches:** `src/entry-worker.ts` (plan tracking on the stdout
 channel), `test/index.ts`, new plan fixtures under `test/`
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Two `ok` lines followed by `1..2` exits 0 without needing
       `testsFinished`
-- [ ] `1..2` followed by two `ok` lines exits 0 without needing
+- [x] `1..2` followed by two `ok` lines exits 0 without needing
       `testsFinished`
-- [ ] `1..3`, two `ok` lines, then `globalThis.testsFinished = true`
+- [x] `1..3`, two `ok` lines, then `globalThis.testsFinished = true`
       reports the plan mismatch on stdout and exits 1
-- [ ] Three `ok` lines followed by `1..2` reports the plan mismatch on
+- [x] Three `ok` lines followed by `1..2` reports the plan mismatch on
       stdout and exits 1
-- [ ] `1..0 # SKIP nothing to run` exits 0
-- [ ] An indented `    1..1` inside a subtest does not end the run
-- [ ] One `ok` line, one `not ok` line, then `1..2` exits 1
+- [x] `1..0 # SKIP nothing to run` exits 0
+- [x] An indented `    1..1` inside a subtest does not end the run
+- [x] One `ok` line, one `not ok` line, then `1..2` exits 1

@@ -18,16 +18,16 @@ suite.
 (`runTestsInWorker` timeout option), `test/index.ts`, new hanging
 fixture under `test/`
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A module that prints a line and never finishes exits 1 when run
+- [x] A module that prints a line and never finishes exits 1 when run
       with `--timeout 500`
-- [ ] In that run, the line printed before the hang is on stdout
-- [ ] In that run, stderr contains a timeout message
-- [ ] `-t 500` behaves the same as `--timeout 500`
-- [ ] A run that finishes before the timeout exits 0 without a timeout
+- [x] In that run, the line printed before the hang is on stdout
+- [x] In that run, stderr contains a timeout message
+- [x] `-t 500` behaves the same as `--timeout 500`
+- [x] A run that finishes before the timeout exits 0 without a timeout
       message
-- [ ] `--timeout abc`, `--timeout -1` and `--timeout` with no value each
+- [x] `--timeout abc`, `--timeout -1` and `--timeout` with no value each
       print an error and exit 1
-- [ ] The cfout process exits after a timeout (no lingering workerd
+- [x] The cfout process exits after a timeout (no lingering workerd
       keeping it alive)
