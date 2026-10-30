@@ -26,14 +26,14 @@ rejected import.
 `package.json` version), `test/index.ts` (bundle helper option for
 `node:*` externals), new `node:assert` fixture under `test/`
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A module that imports `node:assert` and passes exits 0 with
       `--compat-flag nodejs_compat`
-- [ ] The same module exits 1 without the flag
-- [ ] `--compat-flag` can be given more than once and all values take
+- [x] The same module exits 1 without the flag
+- [x] `--compat-flag` can be given more than once and all values take
       effect
-- [ ] A run with no `--compat-date` starts successfully (the default is
+- [x] A run with no `--compat-date` starts successfully (the default is
       accepted by the installed workerd)
-- [ ] `--compat-date 2024-09-23` runs successfully
+- [x] `--compat-date 2024-09-23` runs successfully
 - [x] `--compat-date nope` prints an error and exits 1
