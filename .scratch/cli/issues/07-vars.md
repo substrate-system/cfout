@@ -19,8 +19,8 @@ bindings to Miniflare), `src/entry-worker.ts` (assign
 
 - [ ] A module that checks `globalThis.env.FOO === 'bar'` passes when
       run with `--var FOO=bar` and fails without it
-- [ ] Two `--var` flags are both visible on `globalThis.env`
-- [ ] `--var A=b=c` makes `globalThis.env.A` equal `b=c`
-- [ ] `globalThis.env` is readable at module top level, not only
+- [x] Two `--var` flags are both visible on `globalThis.env`
+- [x] `--var A=b=c` makes `globalThis.env.A` equal `b=c`
+- [x] `globalThis.env` is readable at module top level, not only
       inside tests
-- [ ] `--var NOEQUALS` and `--var =x` each print an error and exit 1
+- [x] `--var NOEQUALS` and `--var =x` each print an error and exit 1

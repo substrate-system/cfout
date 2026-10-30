@@ -36,6 +36,12 @@ Single-context layout. See `docs/agents/domain.md`.
 - workerd cancels a request that has no pending I/O. A run that never
   completes and has nothing scheduled ends with no `done` control line,
   not a hang.
+- Miniflare gzips a `text/plain` response unless the fetch sends
+  `accept-encoding: identity`, and the compressor holds everything until
+  the stream closes. Keep that header on the dispatch or nothing streams
+  before completion (a timed-out run would print nothing).
+- Top-level `await` in the user module currently gets the request
+  cancelled with no output.
 
 ## Testing
 
@@ -45,6 +51,9 @@ Single-context layout. See `docs/agents/domain.md`.
 - Fixtures are `test/_*.js`, bundled with esbuild and piped into
   `dist/cli.js` by the `run()` helper. Use `runTestsInWorker` directly
   only when a test needs the completion summary.
+- A fixture that needs request context without the timer shim can
+  export `then`: `import()` treats the namespace as a thenable and calls
+  it inside the request (see `test/_hang.js`).
 - Each run starts a real workerd, roughly 100-300ms per test.
 - Check `npm run lint` by exit code, not by grepping for "error": eslint
   config errors are printed in prose.

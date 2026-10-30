@@ -12,6 +12,7 @@ const RUN_LIMIT_MS = 4000
 
 interface RunResult {
     exitCode:number|null;
+    signal:NodeJS.Signals|null;
     stdout:string;
     stderr:string;
 }
@@ -45,9 +46,9 @@ function runSource (source:string, args:string[] = []):Promise<RunResult> {
         child.stdout.on('data', (d) => { stdout += d.toString() })
         child.stderr.on('data', (d) => { stderr += d.toString() })
         child.on('error', reject)
-        child.on('close', (exitCode) => {
+        child.on('close', (exitCode, signal) => {
             clearTimeout(timer)
-            resolve({ exitCode, stdout, stderr })
+            resolve({ exitCode, signal, stdout, stderr })
         })
         child.stdin.end(source)
     })
@@ -227,4 +228,43 @@ test('a not ok line fails a run that matches its plan', async t => {
     const { summary } = await runTestsInWorker(await bundle('_plan-fail.js'))
     t.equal(summary.reason, 'plan', 'should complete by the plan rule')
     t.equal(summary.notOk, 1, 'should count the failing test point')
+})
+
+test('a module that never finishes exits 1 at --timeout', async t => {
+    const { exitCode, signal, stdout, stderr } = await run('_hang.js',
+        ['--timeout', '500'])
+    t.equal(exitCode, 1, 'should exit 1')
+    t.equal(signal, null, 'cfout should exit by itself, not be killed')
+    t.ok(stdout.split('\n').includes('ok 1 - before the hang'),
+        'the line printed before the hang is on stdout')
+    t.ok(/timed out/i.test(stderr), 'stderr has a timeout message')
+})
+
+test('-t is the same as --timeout', async t => {
+    const { exitCode, signal, stdout, stderr } = await run('_hang.js',
+        ['-t', '500'])
+    t.equal(exitCode, 1, 'should exit 1')
+    t.equal(signal, null, 'cfout should exit by itself, not be killed')
+    t.ok(stdout.split('\n').includes('ok 1 - before the hang'),
+        'the line printed before the hang is on stdout')
+    t.ok(/timed out/i.test(stderr), 'stderr has a timeout message')
+})
+
+test('a run that finishes before the timeout exits 0', async t => {
+    const { exitCode, stderr } = await run('_pass.js', ['--timeout', '3000'])
+    t.equal(exitCode, 0, 'should exit 0')
+    t.ok(!/timed out/i.test(stderr), 'stderr has no timeout message')
+})
+
+test('a bad --timeout value prints an error and exits 1', async t => {
+    for (const args of [
+        ['--timeout', 'abc'],
+        ['--timeout', '-1'],
+        ['--timeout'],
+    ]) {
+        const { exitCode, stderr } = await runSource('', args)
+        t.equal(exitCode, 1, `${args.join(' ')} should exit 1`)
+        t.ok(stderr.includes('Error:'),
+            `${args.join(' ')} should print an error`)
+    }
 })
