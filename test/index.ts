@@ -174,3 +174,22 @@ test('a plan after the test points ends the run', async t => {
     t.equal(exitCode, 0, 'should exit 0 without testsFinished')
     t.ok(stdout.split('\n').includes('1..2'), 'stdout has the plan')
 })
+
+test('a plan before the test points ends the run after N of them',
+    async t => {
+        const { exitCode, stdout } = await run('_plan-before.js')
+        t.equal(exitCode, 0, 'should exit 0 without testsFinished')
+        t.ok(stdout.split('\n').includes('ok 2 - b'),
+            'stdout has the last test point')
+    })
+
+/**
+ * Does stdout have a top-level `not ok` line naming the plan mismatch?
+ */
+function hasMismatch (stdout:string, planned:number, ran:number):boolean {
+    return stdout.split('\n').some(line => (
+        /^not ok\b/.test(line) &&
+        line.includes(`planned ${planned}`) &&
+        line.includes(`ran ${ran}`)
+    ))
+}
