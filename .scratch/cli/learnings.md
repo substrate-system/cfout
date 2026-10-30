@@ -177,3 +177,41 @@ Effort: medium. Agent exit: 0. Subagents: 0. Cost: $1.21. Checked items: none.
   that may hang should pass `--timeout` well under it.
 
 ---
+<!-- nightralph:entry ticket=cli:4 attempt=1 outcome=done -->
+## 2026-10-30 13:27 -- cli/04 attempt 1 -- done
+
+Effort: medium. Agent exit: 0. Subagents: 0. Cost: $0.91. Checked items: "A passing tapzero suite of several tests exits 0 with an `ok` line per assertion on stdout", "A tapzero test that awaits a `setTimeout` promise passes and the suite exits 0", "A module that calls `setInterval` at top level and clears it from inside the callback completes", "A tapzero suite with one failing assertion exits 1 with a `not ok` line on stdout".
+
+### Agent notes
+# Notes: 04-timer-shim
+
+## Decisions
+- Seam: the CLI (fixture piped through dist/cli.js), per the spec's
+  Testing Decisions. No interactive seam confirmation (autonomous run).
+- Shim lives in the fetch handler in `src/entry-worker.ts`. Both
+  `setTimeout` and `setInterval` are queued during evaluation and
+  replayed in `goLive()` (before the buffered output is flushed).
+- Queued calls return negative fake ids. `clearTimeout`/`clearInterval`
+  are wrapped for the whole run: a fake id is dropped from the queue
+  before replay, or mapped to the real id after it. Needed for item 3
+  (interval cleared from its own callback using the top-level id).
+- Saved real timers are bound to globalThis; unbound-as-method calls
+  (`real.setTimeout(...)`) threw in workerd and broke every run.
+- A throw from a replayed callback is caught and ignored for now (ticket
+  05 turns it into a reported uncaught error). Such a run currently ends
+  at --timeout.
+- The `_hang.js` fixture's `then` export calls setInterval before the
+  import resolves, so it is queued too; it still keeps the run alive.
+
+## Progress
+- [x] item 1: red, then green (tapzero passing suite, 3 ok lines)
+- [x] item 2: passed on first run after item 1; proved red by not
+  restoring the real setTimeout
+- [x] item 3: red, then green; proved the id translation is needed by
+  removing it (the `# calls 3` assertion fails)
+- [x] item 4: passed on first run; proved red by disabling the queue.
+  Exit 1 alone is not discriminating (a broken run also exits 1), the
+  `not ok` stdout assertion is.
+- npm test 83/83, npm run lint exit 0.
+
+---
