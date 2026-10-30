@@ -215,3 +215,56 @@ Effort: medium. Agent exit: 0. Subagents: 0. Cost: $0.91. Checked items: "A pass
 - npm test 83/83, npm run lint exit 0.
 
 ---
+<!-- nightralph:entry ticket=cli:5 attempt=1 outcome=done -->
+## 2026-10-30 13:33 -- cli/05 attempt 1 -- done
+
+Effort: medium. Agent exit: 0. Subagents: 0. Cost: $1.21. Checked items: "A module that throws at top level exits 1, with a `not ok` line on stdout and the error message and stack on stderr", "A module with an unhandled promise rejection exits 1, with a `not ok` line on stdout and the message on stderr", "A module whose top-level `setTimeout` callback throws exits 1, with a `not ok` line on stdout and the message on stderr".
+
+### Agent notes
+# Notes: 05-uncaught-errors
+
+## Decisions
+- Seam: the CLI (fixture piped through dist/cli.js), per the spec's
+  Testing Decisions. No interactive seam confirmation (autonomous run).
+- `reportUncaught(err)` in `src/entry-worker.ts` writes
+  `not ok - <first line of message>` with `write()` on the log channel
+  (not counted as a test point), the stack on the warn channel (so it
+  reaches stderr without counting as a console.error call), then
+  `requestFinish('uncaught')`. Only the first uncaught error is
+  reported; later ones are ignored once a finish is requested.
+- Import rejection: report first, then `goLive()`, so the buffered lines
+  and the report flush together and the finish runs.
+
+## Blocker / limitation found (item 2)
+- workerd does NOT dispatch `unhandledrejection` for a promise rejected
+  while the user module evaluates (global scope). Tried: listener in the
+  fetch handler, listener at the entry module top level, checking for
+  queued events at goLive and 200ms later. None fired. A rejection in
+  request context (after the import resolves, e.g. after awaiting a
+  timer, or inside a `then` export) fires the listener normally.
+- So the `_rejection.js` fixture rejects after awaiting a timer, which
+  is the realistic case (async tapzero tests). A bare top-level
+  `Promise.reject(...)` still ends with no `done` line (exit 1 but not
+  reported). Worth a README note alongside the timer limitation.
+
+## Progress
+- [x] item 1: red (no not ok / stderr), then green
+- [x] item 2: red with listener disabled, then green
+- [x] item 3: red, then green (replayed callback catch now calls
+  reportUncaught; function declaration is hoisted)
+- [x] item 4: passed on first run (covered by the item 1 path); proved
+  red by removing the import-rejection report. Asserts stderr matches
+  /global scope/i, which comes from workerd's message.
+- [x] item 5: exit-without-kill alone is NOT discriminating (workerd
+  cancels a broken run, cfout exits 1 promptly anyway). The test runs
+  each fixture with --timeout 60000 and asserts summary.reason ===
+  'uncaught' via runTestsInWorker; proved red by commenting out
+  requestFinish('uncaught').
+- npm test 116/116, npm run lint exit 0.
+
+## Follow-ups (not done, out of scope)
+- README is a stub; it should document both limitations: throws in
+  timers scheduled after the replay, and rejections made during module
+  evaluation.
+
+---
