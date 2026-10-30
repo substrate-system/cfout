@@ -8,10 +8,21 @@ export type Writer = (text:string) => void
 export interface RunOptions {
     stdout?:Writer;
     stderr?:Writer;
+    /**
+     * Milliseconds to wait for the run to complete, measured from when
+     * the fetch is dispatched, so workerd startup does not count.
+     * Defaults to 5000.
+     */
+    timeout?:number;
 }
 
+export const DEFAULT_TIMEOUT = 5000
+
 export interface CompletionSummary {
-    /** How the run ended, or null if the body ended without completing */
+    /**
+     * How the run ended: a completion rule, `'timeout'`, or null if the
+     * body ended without completing
+     */
     reason:string|null;
     /** Number of `not ok` lines seen on stdout */
     notOk:number;
@@ -42,6 +53,7 @@ export async function runTestsInWorker (
 ):Promise<RunResult> {
     const stdout = options.stdout ?? (() => {})
     const stderr = options.stderr ?? (() => {})
+    const timeout = options.timeout ?? DEFAULT_TIMEOUT
 
     const mf = new Miniflare({
         modulesRoot: MODULES_ROOT,
@@ -95,22 +107,51 @@ export async function runTestsInWorker (
         }
     }
 
-    try {
-        const res = await mf.dispatchFetch('http://localhost/')
-        if (res.body) {
-            const decoder = new TextDecoder()
-            let rest = ''
-            for await (const chunk of res.body) {
-                rest += decoder.decode(chunk, { stream: true })
-                const lines = rest.split('\n')
-                rest = lines.pop() ?? ''
-                for (const line of lines) handleLine(line)
-            }
-            rest += decoder.decode()
-            if (rest) handleLine(rest)
+    let timedOut = false
+    let timer:ReturnType<typeof setTimeout>|undefined
+
+    async function read () {
+        // A compressed body is held back until the stream closes, so ask
+        // for identity encoding to see each line as it is written.
+        const res = await mf.dispatchFetch('http://localhost/', {
+            headers: { 'accept-encoding': 'identity' },
+        })
+        if (!res.body) return
+        const decoder = new TextDecoder()
+        let rest = ''
+        for await (const chunk of res.body) {
+            if (timedOut) return
+            rest += decoder.decode(chunk, { stream: true })
+            const lines = rest.split('\n')
+            rest = lines.pop() ?? ''
+            for (const line of lines) handleLine(line)
         }
+        rest += decoder.decode()
+        if (rest) handleLine(rest)
+    }
+
+    try {
+        await mf.ready
+        // the clock starts with the fetch, workerd startup does not count
+        const expired = new Promise<void>(resolve => {
+            timer = setTimeout(() => {
+                timedOut = true
+                resolve()
+            }, timeout)
+        })
+        const reading = read()
+        // disposing Miniflare below ends a read that is still pending
+        reading.catch(() => {})
+        await Promise.race([reading, expired])
     } finally {
+        clearTimeout(timer)
         await mf.dispose()
+    }
+
+    if (timedOut) {
+        summary.reason = 'timeout'
+        stderr(`cfout: timed out after ${timeout}ms\n`)
+        return { exitCode: 1, summary }
     }
 
     const passed = (
