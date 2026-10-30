@@ -449,3 +449,12 @@ test('a module importing node:assert passes with nodejs_compat', async t => {
     t.ok(stdout.split('\n').includes('ok 1 - node:assert works'),
         'stdout has the passing line')
 })
+
+test('the node:assert module exits 1 without nodejs_compat', async t => {
+    const { exitCode, signal, stdout } = await run('_node-assert.js', [],
+        { nodeExternal: true })
+    t.equal(signal, null, 'cfout should exit by itself, not be killed')
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(stdout.split('\n').some(line => /^not ok\b/.test(line)),
+        'stdout has a not ok line')
+})
