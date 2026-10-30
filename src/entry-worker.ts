@@ -151,8 +151,9 @@ export default {
                 replayed.set(id, real[name](() => {
                     try {
                         fn(...args)
-                    } catch {
-                        // a throw here would cancel the request
+                    } catch (err) {
+                        // left alone, a throw here cancels the request
+                        reportUncaught(err)
                     }
                 }, ms))
             }

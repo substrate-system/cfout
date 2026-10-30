@@ -378,3 +378,16 @@ test('a module with an unhandled rejection exits 1 and reports it',
         t.ok(stderr.includes('nobody caught this'), 'stderr has the message')
         t.ok(!/timed out/i.test(stderr), 'the run did not time out')
     })
+
+test('a top-level setTimeout callback that throws exits 1 and reports it',
+    async t => {
+        const { exitCode, signal, stdout, stderr } = await run(
+            '_timer-throw.js'
+        )
+        t.equal(signal, null, 'cfout should exit by itself, not be killed')
+        t.equal(exitCode, 1, 'should exit 1')
+        t.ok(hasNotOk(stdout, 'thrown from a timer'),
+            'stdout has a not ok line with the message')
+        t.ok(stderr.includes('thrown from a timer'), 'stderr has the message')
+        t.ok(!/timed out/i.test(stderr), 'the run did not time out')
+    })
