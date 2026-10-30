@@ -98,3 +98,11 @@ test('console.warn goes to stderr and not stdout', async t => {
     t.ok(stderr.split('\n').includes('careful now'), 'stderr has the warning')
     t.ok(!stdout.includes('careful now'), 'stdout does not have the warning')
 })
+
+test('a console.error call fails an otherwise passing run', async t => {
+    const { exitCode, stdout, stderr } = await run('_console-error.js')
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(stderr.split('\n').includes('something broke'),
+        'stderr has the message')
+    t.ok(!stdout.includes('something broke'), 'stdout does not')
+})
