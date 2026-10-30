@@ -39,7 +39,7 @@ complete through the plan rule from 03.
 **Touches:** `src/entry-worker.ts` (timer queue and replay),
 `test/index.ts`, new tapzero fixtures under `test/`
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A passing tapzero suite of several tests exits 0 with an `ok`
       line per assertion on stdout
