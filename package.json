@@ -1,5 +1,15 @@
 {
+  "dependencies": {
+    "miniflare": "^4.20260730.0"
+  },
   "devDependencies": {
-    "nightralph": "^0.1.4"
+    "@substrate-system/tapzero": "^0.10.17",
+    "@types/node": "^22.20.5",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.14.0",
+    "newneostandard": "^0.14.3",
+    "nightralph": "^0.1.4",
+    "tap-spec": "^5.0.0",
+    "typescript": "^6.0.3"
   }
 }
