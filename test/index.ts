@@ -193,3 +193,8 @@ test('two --var flags are both visible on globalThis.env', async t => {
     const env = await envAtTopLevel(['--var', 'A=1', '--var', 'B=2'])
     t.deepEqual(env, { A: '1', B: '2' }, 'env should have both vars')
 })
+
+test('--var splits on the first =', async t => {
+    const env = await envAtTopLevel(['--var', 'A=b=c'])
+    t.deepEqual(env, { A: 'b=c' }, 'the value keeps the later =')
+})
