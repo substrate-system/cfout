@@ -187,6 +187,10 @@ export default {
             requestFinish('uncaught')
         }
 
+        globalThis.addEventListener('unhandledrejection', (event) => {
+            reportUncaught(event.reason)
+        })
+
         for (const method of METHODS) {
             console[method] = (...args) => {
                 emit(PREFIX[method], args.map(format).join(' '))
