@@ -322,3 +322,35 @@ test/_compat-echo.js, AGENTS.md
   is still a stub).
 
 ---
+<!-- nightralph:entry ticket=cli:8 attempt=1 outcome=done -->
+## 2026-10-30 13:42 -- cli/08 attempt 1 -- done
+
+Effort: medium. Agent exit: 0. Subagents: 0. Cost: $0.67. Checked items: "Every flag in `cfout --help` is documented in the README", "The pipeline example in the README runs successfully against a passing tapzero test file", "The late-timer limitation is documented".
+
+### Agent notes
+# Notes: 08-readme
+
+## Decisions
+- Docs-only ticket: no test-first, and per the ticket and user rules no
+  tests for docs. Verified by hand instead.
+- Replaced the template badges (they pointed at other packages) with
+  cfout ones, and removed the "dependencies: zero" badge (miniflare is a
+  dependency).
+- README also documents the two limitations ticket 05 found (rejections
+  during module evaluation are not reported; top-level await cancels the
+  request), alongside the required late-timer limitation.
+
+## Verification
+- Item 1: README CLI block is a copy of `node dist/cli.js --help`, and
+  each flag has its own section.
+- Item 2: wrote a tapzero test (async test awaiting setTimeout) to a
+  temp dir inside the worktree and ran
+  `npx esbuild --bundle <file> --format=esm | npx cfout | npx tap-spec`:
+  1 passing, every pipeline stage exit 0. Temp files removed.
+- Item 3: "Known limitations" section.
+- grep found no em dashes, en dashes or arrows. npm run lint exit 0.
+
+## Files
+README.md
+
+---
