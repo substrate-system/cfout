@@ -106,3 +106,12 @@ test('a console.error call fails an otherwise passing run', async t => {
         'stderr has the message')
     t.ok(!stdout.includes('something broke'), 'stdout does not')
 })
+
+test('console output from module evaluation appears on stdout', async t => {
+    const { exitCode, stdout } = await run('_top-level.js')
+    t.equal(exitCode, 0, 'should exit 0')
+    const lines = stdout.split('\n')
+    t.ok(lines.includes('# top level'), 'stdout has the first line')
+    t.ok(lines.includes('ok 1 - logged at top level'),
+        'stdout has the second line')
+})
