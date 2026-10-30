@@ -8,7 +8,7 @@ Reads a bundled ES module from stdin, runs it in the Cloudflare Workers
 runtime, and prints its output as TAP.
 
 Options:
-  -t, --timeout <ms>         Timeout in milliseconds (default: ${DEFAULT_TIMEOUT})
+  -t, --timeout <ms>         Timeout in milliseconds (default: 5000)
   -h, --help                 Show this help message
 `
 
