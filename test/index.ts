@@ -156,3 +156,9 @@ test('runTestsInWorker writes only through the injected writers', async t => {
     t.ok(err.join('').includes('a warning'), 'stderr writer got the warning')
     t.equal(leaked.length, 0, 'nothing was written to the process streams')
 })
+
+test('cfout --help prints usage and exits 0', async t => {
+    const { exitCode, stdout } = await runSource('', ['--help'])
+    t.equal(exitCode, 0, 'should exit 0')
+    t.ok(stdout.includes('Usage: cfout'), 'should print the usage block')
+})
