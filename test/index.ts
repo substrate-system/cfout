@@ -91,3 +91,10 @@ test('console.log, info and debug go to stdout and not stderr', async t => {
         t.ok(!stderr.includes(line), `stderr does not have "${line}"`)
     }
 })
+
+test('console.warn goes to stderr and not stdout', async t => {
+    const { exitCode, stdout, stderr } = await run('_warn.js')
+    t.equal(exitCode, 0, 'a warning should not fail the run')
+    t.ok(stderr.split('\n').includes('careful now'), 'stderr has the warning')
+    t.ok(!stdout.includes('careful now'), 'stdout does not have the warning')
+})
