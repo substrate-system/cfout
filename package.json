@@ -1,5 +1,49 @@
 {
+  "name": "@substrate-system/cfout",
+  "version": "0.0.0",
+  "description": "Run piped tests in the Cloudflare Workers runtime",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "cfout": "dist/cli.js"
+  },
+  "files": [
+    "dist/*"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint": "eslint \"./**/*.{ts,js}\"",
+    "build": "mkdir -p ./dist && rm -rf ./dist/* && npm run build-esm && npm run build-types",
+    "build-esm": "esbuild src/index.ts src/cli.ts src/entry-worker.ts --format=esm --platform=node --target=node22 --outdir=./dist --sourcemap",
+    "build-types": "tsc --emitDeclarationOnly --project tsconfig.build.json",
+    "pretest": "npm run build",
+    "test": "esbuild test/index.ts --bundle --format=esm --platform=node --packages=external | node --input-type=module | tap-spec",
+    "preversion": "npm run lint",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "miniflare": "^4.20260730.0"
+  },
   "devDependencies": {
-    "nightralph": "^0.1.4"
-  }
+    "@substrate-system/tapzero": "^0.10.17",
+    "@types/node": "^22.20.5",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.14.0",
+    "newneostandard": "^0.14.3",
+    "nightralph": "^0.1.4",
+    "tap-spec": "^5.0.0",
+    "typescript": "^6.0.3"
+  },
+  "author": "nichoth",
+  "license": "SEE LICENSE IN LICENSE"
 }
