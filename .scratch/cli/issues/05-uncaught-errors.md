@@ -21,11 +21,11 @@ callbacks), `test/index.ts`, new fixtures under `test/`
 
 **Status:** ready-for-agent
 
-- [ ] A module that throws at top level exits 1, with a `not ok` line
+- [x] A module that throws at top level exits 1, with a `not ok` line
       on stdout and the error message and stack on stderr
-- [ ] A module with an unhandled promise rejection exits 1, with a
+- [x] A module with an unhandled promise rejection exits 1, with a
       `not ok` line on stdout and the message on stderr
-- [ ] A module whose top-level `setTimeout` callback throws exits 1,
+- [x] A module whose top-level `setTimeout` callback throws exits 1,
       with a `not ok` line on stdout and the message on stderr
 - [ ] A module that calls `crypto.randomUUID()` at top level exits 1
       with the runtime's error message on stderr
