@@ -21,17 +21,30 @@ interface RunResult {
  * Bundle a fixture from `test/` with esbuild and pipe it into the
  * built CLI.
  */
-async function run (fixture:string, args:string[] = []):Promise<RunResult> {
-    const source = await bundle(fixture)
+async function run (
+    fixture:string,
+    args:string[] = [],
+    opts:BundleOptions = {}
+):Promise<RunResult> {
+    const source = await bundle(fixture, opts)
     return runSource(source, args)
 }
 
-async function bundle (fixture:string):Promise<string> {
+interface BundleOptions {
+    /** Leave `node:*` imports external, as cfout's input contract says */
+    nodeExternal?:boolean;
+}
+
+async function bundle (
+    fixture:string,
+    opts:BundleOptions = {}
+):Promise<string> {
     const result = await build({
         entryPoints: [path.join(ROOT, 'test', fixture)],
         bundle: true,
         format: 'esm',
         write: false,
+        external: opts.nodeExternal ? ['node:*'] : [],
     })
     return result.outputFiles[0].text
 }
@@ -428,3 +441,65 @@ test('an uncaught error ends the run without waiting for the timeout',
                 `${fixture} should complete by the uncaught error rule`)
         }
     })
+
+test('a module importing node:assert passes with nodejs_compat', async t => {
+    const { exitCode, stdout } = await run('_node-assert.js',
+        ['--compat-flag', 'nodejs_compat'], { nodeExternal: true })
+    t.equal(exitCode, 0, 'should exit 0')
+    t.ok(stdout.split('\n').includes('ok 1 - node:assert works'),
+        'stdout has the passing line')
+})
+
+test('the node:assert module exits 1 without nodejs_compat', async t => {
+    const { exitCode, signal, stdout } = await run('_node-assert.js', [],
+        { nodeExternal: true })
+    t.equal(signal, null, 'cfout should exit by itself, not be killed')
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(stdout.split('\n').some(line => /^not ok\b/.test(line)),
+        'stdout has a not ok line')
+})
+
+test('--compat-flag can be given more than once', async t => {
+    const { exitCode, stdout } = await run('_compat-echo.js', [
+        '--compat-flag', 'nodejs_compat',
+        '--compat-flag', 'no_global_navigator',
+    ])
+    t.equal(exitCode, 0, 'should exit 0')
+    const line = stdout.split('\n').find(l => l.startsWith('# compat '))
+    const compat = line ? JSON.parse(line.slice('# compat '.length)) : null
+    t.deepEqual(compat, { process: true, navigator: false },
+        'both flags take effect')
+})
+
+test('--compat-date 2024-09-23 runs successfully', async t => {
+    const { exitCode, stdout } = await run('_pass.js',
+        ['--compat-date', '2024-09-23'])
+    t.equal(exitCode, 0, 'should exit 0')
+    t.ok(stdout.split('\n').includes('ok 1 - x'), 'should print the test line')
+})
+
+test('--compat-date reaches the runtime', async t => {
+    // well-formed, but newer than any installed workerd supports
+    const { exitCode, stdout } = await run('_pass.js',
+        ['--compat-date', '2999-01-01'])
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(!stdout.includes('ok 1 - x'), 'the module should not run')
+})
+
+test('a bad --compat-date value prints an error and exits 1', async t => {
+    for (const args of [
+        ['--compat-date', 'nope'],
+        ['--compat-date', '2024-13-45'],
+        ['--compat-date'],
+    ]) {
+        const { exitCode, stdout, stderr } = await runSource(
+            await bundle('_pass.js'),
+            args
+        )
+        t.equal(exitCode, 1, `${args.join(' ')} should exit 1`)
+        // an argument error, not a crash with a stack
+        t.ok(stderr.startsWith('Error:'),
+            `${args.join(' ')} should print an argument error`)
+        t.equal(stdout, '', 'nothing should run')
+    }
+})

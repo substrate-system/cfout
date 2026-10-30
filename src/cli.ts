@@ -9,6 +9,9 @@ runtime, and prints its output as TAP.
 
 Options:
   -t, --timeout <ms>         Timeout in milliseconds (default: 5000)
+  --compat-date <date>       Workers compatibility date (default: newest
+                             the installed runtime supports)
+  --compat-flag <name>       Compatibility flag, repeatable
   --var <KEY=VALUE>          Variable exposed as globalThis.env.KEY,
                              repeatable
   -h, --help                 Show this help message
@@ -17,13 +20,20 @@ Options:
 interface CliArgs {
     help:boolean;
     vars:Record<string, string>;
+    compatDate?:string;
+    compatFlags:string[];
     timeout:number;
 }
 
 class ArgError extends Error {}
 
 function parseArgs (argv:string[]):CliArgs {
-    const args:CliArgs = { help: false, vars: {}, timeout: DEFAULT_TIMEOUT }
+    const args:CliArgs = {
+        help: false,
+        vars: {},
+        compatFlags: [],
+        timeout: DEFAULT_TIMEOUT,
+    }
 
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i]
@@ -41,6 +51,17 @@ function parseArgs (argv:string[]):CliArgs {
                     )
                 }
                 args.vars[value.slice(0, eq)] = value.slice(eq + 1)
+                break
+            }
+            case '--compat-date':
+                args.compatDate = parseCompatDate(argv[++i])
+                break
+            case '--compat-flag': {
+                const value = argv[++i]
+                if (value === undefined || value === '') {
+                    throw new ArgError('--compat-flag requires a name')
+                }
+                args.compatFlags.push(value)
                 break
             }
             case '-t':
@@ -72,6 +93,25 @@ function parseTimeout (flag:string, value:string|undefined):number {
     return ms
 }
 
+function parseCompatDate (value:string|undefined):string {
+    if (value === undefined) {
+        throw new ArgError('--compat-date requires a value')
+    }
+    // a real calendar day survives the round trip through Date
+    const date = new Date(`${value}T00:00:00Z`)
+    const valid = (
+        /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+        !Number.isNaN(date.getTime()) &&
+        date.toISOString().startsWith(value)
+    )
+    if (!valid) {
+        throw new ArgError(
+            `Invalid compatibility date: ${value}. Must be YYYY-MM-DD.`
+        )
+    }
+    return value
+}
+
 async function readStdin ():Promise<string> {
     const chunks:Buffer[] = []
     for await (const chunk of process.stdin) chunks.push(chunk as Buffer)
@@ -97,6 +137,8 @@ async function main () {
     const source = await readStdin()
     const { exitCode } = await runTestsInWorker(source, {
         vars: args.vars,
+        compatDate: args.compatDate,
+        compatFlags: args.compatFlags,
         stdout: text => { process.stdout.write(text) },
         stderr: text => { process.stderr.write(text) },
         timeout: args.timeout,

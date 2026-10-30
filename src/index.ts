@@ -11,6 +11,13 @@ export interface RunOptions {
     /** String variables, visible to the test as `globalThis.env` */
     vars?:Record<string, string>;
     /**
+     * Workers compatibility date, `YYYY-MM-DD`. Defaults to the newest
+     * date the installed workerd supports.
+     */
+    compatDate?:string;
+    /** Workers compatibility flags, such as `nodejs_compat` */
+    compatFlags?:string[];
+    /**
      * Milliseconds to wait for the run to complete, measured from when
      * the fetch is dispatched, so workerd startup does not count.
      * Defaults to 5000.
@@ -68,7 +75,8 @@ export async function runTestsInWorker (
             { type: 'ESModule', path: USER_PATH, contents: source },
         ],
         bindings: options.vars ?? {},
-        compatibilityDate: newestCompatDate(),
+        compatibilityDate: options.compatDate ?? newestCompatDate(),
+        compatibilityFlags: options.compatFlags ?? [],
         log: new NoOpLog(),
         handleRuntimeStdio (runtimeOut:Readable, runtimeErr:Readable) {
             // workerd's own stdout is not ours to print, stdout is for TAP
