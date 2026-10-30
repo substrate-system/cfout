@@ -30,4 +30,7 @@ Started: 2026-10-30T20:09:39.489Z
   branch: cfout--cli-07-vars
   exit: 0
   completed: 2026-10-30T20:22:28.639Z
-- [ ] 08-readme.md
+- [x] 08-readme.md
+  branch: cfout--cli-08-readme
+  exit: 0
+  completed: 2026-10-30T20:42:02.302Z
