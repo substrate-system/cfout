@@ -2,13 +2,15 @@ import { test } from '@substrate-system/tapzero'
 import { spawn } from 'node:child_process'
 import path from 'node:path'
 import { build } from 'esbuild'
-import { runTestsInWorker } from '../src/index.js'
+import { runTestsInWorker, DEFAULT_TIMEOUT } from '../src/index.js'
 
 // the suite is bundled and piped into node, so import.meta.url is not
 // a real path; npm runs scripts from the package root
 const ROOT = process.cwd()
 const CLI = path.join(ROOT, 'dist', 'cli.js')
-const RUN_LIMIT_MS = 4000
+// a backstop for runs that never complete: well above the CLI's default
+// timeout plus a cold workerd start, so it never cuts a real run short
+const RUN_LIMIT_MS = DEFAULT_TIMEOUT + 10000
 
 interface RunResult {
     exitCode:number|null;
@@ -307,6 +309,12 @@ test('a module that never finishes exits 1 at --timeout', async t => {
     t.equal(signal, null, 'cfout should exit by itself, not be killed')
     t.ok(stdout.split('\n').includes('ok 1 - before the hang'),
         'the line printed before the hang is on stdout')
+    t.ok(/timed out/i.test(stderr), 'stderr has a timeout message')
+})
+
+test('with no --timeout a hanging module exits 1 by itself', async t => {
+    const { exitCode, stderr } = await run('_hang.js')
+    t.equal(exitCode, 1, 'should exit 1')
     t.ok(/timed out/i.test(stderr), 'stderr has a timeout message')
 })
 
