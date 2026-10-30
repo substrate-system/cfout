@@ -315,3 +315,11 @@ test('a bad --timeout value prints an error and exits 1', async t => {
             `${args.join(' ')} should print an error`)
     }
 })
+
+test('a passing tapzero suite exits 0 with an ok line per assertion',
+    async t => {
+        const { exitCode, stdout } = await run('_tapzero-pass.js')
+        t.equal(exitCode, 0, 'should exit 0')
+        const oks = stdout.split('\n').filter(line => /^ok \d+/.test(line))
+        t.equal(oks.length, 3, 'should print an ok line per assertion')
+    })

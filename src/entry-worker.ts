@@ -111,8 +111,32 @@ export default {
             writer.close().catch(() => {}).finally(() => resolveDone())
         }
 
+        // Global scope forbids timers, so calls made while the user
+        // module evaluates are queued and replayed with the real timers
+        // once the import resolves, inside the request.
+        const realSetTimeout = globalThis.setTimeout
+        const queued = []
+        globalThis.setTimeout = (fn, ms, ...args) => {
+            queued.push([fn, ms, args])
+            return -1
+        }
+
+        function replayTimers () {
+            globalThis.setTimeout = realSetTimeout
+            for (const [fn, ms, args] of queued.splice(0)) {
+                realSetTimeout(() => {
+                    try {
+                        fn(...args)
+                    } catch {
+                        // a throw here would cancel the request
+                    }
+                }, ms)
+            }
+        }
+
         function goLive () {
             live = true
+            replayTimers()
             for (const text of buffered.splice(0)) write(text)
             if (finishRequested) finish(finishRequested)
         }
