@@ -268,3 +268,57 @@ Effort: medium. Agent exit: 0. Subagents: 0. Cost: $1.21. Checked items: "A modu
   evaluation.
 
 ---
+<!-- nightralph:entry ticket=cli:6 attempt=1 outcome=done -->
+## 2026-10-30 13:40 -- cli/06 attempt 1 -- done
+
+Effort: medium. Agent exit: 0. Subagents: 0. Cost: $1.05. Checked items: "A module that imports `node:assert` and passes exits 0 with `--compat-flag nodejs_compat`", "`--compat-date nope` prints an error and exits 1".
+
+### Agent notes
+# Notes: 06-compat-settings
+
+## Decisions
+- Seam: the CLI (fixtures piped through dist/cli.js), per the spec.
+  Autonomous run, no interactive seam confirmation.
+- test/index.ts: `bundle`/`run` take `{ nodeExternal: true }` to leave
+  `node:*` imports external (esbuild `external: ['node:*']`).
+- Default compat date (`newestCompatDate()`) already existed from an
+  earlier ticket.
+
+## Progress
+- [x] item 1: red (exit 1 without the flag being parsed), then green.
+  Added `--compat-flag` (repeatable) in src/cli.ts and `compatFlags`
+  in RunOptions, passed as Miniflare `compatibilityFlags`.
+- [x] item 2: passed on first run (the rejected import is reported by
+  the 05 uncaught path). Proved red by hard-coding `nodejs_compat` in
+  src/index.ts.
+- [x] item 3: "all values take effect" read as: two flags with
+  independent observable effects both apply. Fixture `_compat-echo.js`
+  logs `typeof process` (nodejs_compat) and `typeof navigator`
+  (no_global_navigator) as JSON. Passed on first run because item 1
+  already pushed every value; proved red by making the CLI keep only
+  the last flag.
+- [x] item 4: no new code or test. `newestCompatDate()` already existed
+  and every existing no-flag test (e.g. "a passing module exits 0")
+  starts workerd with it. Proved that coverage is real by hard-coding
+  2099-01-01: those tests fail ("Compatibility date ... is in the
+  future and unsupported").
+- [x] item 5: red (unknown option), then green. Added `--compat-date`
+  and `compatDate` in RunOptions. Extra test: a well-formed future date
+  (2999-01-01) exits 1, which proves the value reaches workerd; proved
+  red by ignoring `compatDate` in src/index.ts.
+- [x] item 6: test covers `nope`, `2024-13-45` and a missing value.
+  `2024-13-45` exposed a real bug (Invalid Date -> toISOString throws
+  RangeError -> crash with stack). The first version of the test
+  passed anyway because `cfout: RangeError: ...` contains "Error:";
+  tightened to `stderr.startsWith('Error:')`, saw it go red, then fixed
+  the NaN check.
+
+## Files changed
+src/cli.ts, src/index.ts, test/index.ts, test/_node-assert.js,
+test/_compat-echo.js, AGENTS.md
+
+## Follow-ups (not done)
+- README does not document --compat-date / --compat-flag yet (README
+  is still a stub).
+
+---
