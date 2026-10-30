@@ -61,6 +61,9 @@ Single-context layout. See `docs/agents/domain.md`.
   completion rule fired. Assert `summary.reason` via
   `runTestsInWorker` to check that.
 
+- The README's CLI block is a copy of `USAGE` in `src/cli.ts`, and each
+  flag has its own README section. Change them together.
+
 ## Testing
 
 - `npm test` builds, bundles `test/index.ts` with esbuild and pipes it
