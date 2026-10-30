@@ -203,3 +203,16 @@ test('globalThis.env is readable at module top level', async t => {
     const env = await envAtTopLevel(['--var', 'FOO=bar'])
     t.deepEqual(env, { FOO: 'bar' }, 'top-level code sees the var')
 })
+
+test('--var without = or with an empty key exits 1 with an error',
+    async t => {
+        for (const value of ['NOEQUALS', '=x']) {
+            const { exitCode, stdout, stderr } = await runSource(
+                await bundle('_pass.js'),
+                ['--var', value]
+            )
+            t.equal(exitCode, 1, `--var ${value} should exit 1`)
+            t.ok(stderr.includes(value), 'stderr should name the bad value')
+            t.equal(stdout, '', 'nothing should run')
+        }
+    })
