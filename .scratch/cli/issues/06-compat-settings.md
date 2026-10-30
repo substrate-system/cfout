@@ -28,7 +28,7 @@ rejected import.
 
 **Status:** ready-for-agent
 
-- [ ] A module that imports `node:assert` and passes exits 0 with
+- [x] A module that imports `node:assert` and passes exits 0 with
       `--compat-flag nodejs_compat`
 - [ ] The same module exits 1 without the flag
 - [ ] `--compat-flag` can be given more than once and all values take
@@ -36,4 +36,4 @@ rejected import.
 - [ ] A run with no `--compat-date` starts successfully (the default is
       accepted by the installed workerd)
 - [ ] `--compat-date 2024-09-23` runs successfully
-- [ ] `--compat-date nope` prints an error and exits 1
+- [x] `--compat-date nope` prints an error and exits 1
