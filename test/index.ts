@@ -405,3 +405,26 @@ test('crypto.randomUUID() at top level fails with the runtime error',
         t.ok(/global scope/i.test(stderr), 'stderr has the runtime error')
         t.ok(!/timed out/i.test(stderr), 'the run did not time out')
     })
+
+test('an uncaught error ends the run without waiting for the timeout',
+    async t => {
+        for (const fixture of [
+            '_throw.js',
+            '_rejection.js',
+            '_timer-throw.js',
+            '_random-uuid.js',
+        ]) {
+            // the run limit kills cfout long before this timeout
+            const { exitCode, signal } = await run(fixture,
+                ['--timeout', '60000'])
+            t.equal(signal, null, `${fixture} should exit by itself`)
+            t.equal(exitCode, 1, `${fixture} should exit 1`)
+
+            const { summary } = await runTestsInWorker(
+                await bundle(fixture),
+                { timeout: 60000 }
+            )
+            t.equal(summary.reason, 'uncaught',
+                `${fixture} should complete by the uncaught error rule`)
+        }
+    })
