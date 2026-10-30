@@ -54,3 +54,10 @@ test('a passing module exits 0 with its TAP on stdout', async t => {
     t.ok(stdout.split('\n').includes('ok 1 - x'),
         'should print the test line')
 })
+
+test('a module with a not ok line exits 1', async t => {
+    const { exitCode, stdout } = await run('_fail.js')
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(stdout.split('\n').includes('not ok 1 - x'),
+        'should print the failing line')
+})
