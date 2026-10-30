@@ -30,7 +30,7 @@ No em dashes or arrow characters. No tests for the docs.
 
 **Status:** ready-for-agent
 
-- [ ] Every flag in `cfout --help` is documented in the README
-- [ ] The pipeline example in the README runs successfully against a
+- [x] Every flag in `cfout --help` is documented in the README
+- [x] The pipeline example in the README runs successfully against a
       passing tapzero test file
-- [ ] The late-timer limitation is documented
+- [x] The late-timer limitation is documented
