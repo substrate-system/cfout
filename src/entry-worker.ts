@@ -24,6 +24,9 @@ export function entryWorkerSource (userModule:string):string {
     return `
 const PREFIX = ${JSON.stringify(PREFIX)}
 const METHODS = ['log', 'info', 'debug', 'warn', 'error']
+const STDOUT = [PREFIX.log, PREFIX.info, PREFIX.debug]
+const TEST_POINT = /^(not )?ok\\b/
+const PLAN = /^1\\.\\.(\\d+)(\\s*#.*)?$/
 
 function format (arg) {
     if (typeof arg === 'string') return arg
@@ -56,7 +59,8 @@ export default {
         ctx.waitUntil(done)
 
         function write (text) {
-            if (finished) return
+            // nothing after the end of the run is printed
+            if (finished || (finishRequested && !live)) return
             if (!live) {
                 buffered.push(text)
                 return
@@ -65,7 +69,30 @@ export default {
         }
 
         function emit (prefix, text) {
-            write(text.split('\\n').map(line => prefix + line + '\\n').join(''))
+            const lines = text.split('\\n')
+            write(lines.map(line => prefix + line + '\\n').join(''))
+            if (STDOUT.includes(prefix)) lines.forEach(trackPlan)
+        }
+
+        // Completion by TAP plan. Only top-level lines count, indented
+        // subtest plans and test points are ignored.
+        let planned = null
+        let seen = 0
+        function trackPlan (line) {
+            if (finished || finishRequested) return
+            if (TEST_POINT.test(line)) {
+                seen++
+                if (planned !== null && seen >= planned) {
+                    requestFinish('plan')
+                }
+                return
+            }
+            const match = line.match(PLAN)
+            if (!match || planned !== null) return
+            planned = Number(match[1])
+            // a plan after the test points ends the run at once, a plan
+            // before them waits for N test points
+            if (seen > 0 || planned === 0) requestFinish('plan')
         }
 
         function control (data) {
@@ -74,6 +101,11 @@ export default {
 
         function finish (reason) {
             if (finished) return
+            if (planned !== null && planned !== seen) {
+                // written directly so it is not counted as a test point
+                write(\`\${PREFIX.log}not ok - planned \${planned} tests\` +
+                    \` but ran \${seen}\\n\`)
+            }
             control({ done: reason })
             finished = true
             writer.close().catch(() => {}).finally(() => resolveDone())

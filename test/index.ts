@@ -168,3 +168,9 @@ test('cfout --bogus prints an error to stderr and exits 1', async t => {
     t.equal(exitCode, 1, 'should exit 1')
     t.ok(stderr.includes('--bogus'), 'stderr should name the bad option')
 })
+
+test('a plan after the test points ends the run', async t => {
+    const { exitCode, stdout } = await run('_plan-after.js')
+    t.equal(exitCode, 0, 'should exit 0 without testsFinished')
+    t.ok(stdout.split('\n').includes('1..2'), 'stdout has the plan')
+})
