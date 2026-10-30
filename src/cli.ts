@@ -9,6 +9,8 @@ runtime, and prints its output as TAP.
 
 Options:
   -t, --timeout <ms>         Timeout in milliseconds (default: 5000)
+  --compat-date <date>       Workers compatibility date (default: newest
+                             the installed runtime supports)
   --compat-flag <name>       Compatibility flag, repeatable
   --var <KEY=VALUE>          Variable exposed as globalThis.env.KEY,
                              repeatable
@@ -18,6 +20,7 @@ Options:
 interface CliArgs {
     help:boolean;
     vars:Record<string, string>;
+    compatDate?:string;
     compatFlags:string[];
     timeout:number;
 }
@@ -50,6 +53,9 @@ function parseArgs (argv:string[]):CliArgs {
                 args.vars[value.slice(0, eq)] = value.slice(eq + 1)
                 break
             }
+            case '--compat-date':
+                args.compatDate = parseCompatDate(argv[++i])
+                break
             case '--compat-flag': {
                 const value = argv[++i]
                 if (value === undefined || value === '') {
@@ -87,6 +93,22 @@ function parseTimeout (flag:string, value:string|undefined):number {
     return ms
 }
 
+function parseCompatDate (value:string|undefined):string {
+    if (value === undefined) {
+        throw new ArgError('--compat-date requires a value')
+    }
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+    // a real calendar day survives the round trip through Date
+    const valid = match && new Date(`${value}T00:00:00Z`)
+        .toISOString().startsWith(value)
+    if (!valid) {
+        throw new ArgError(
+            `Invalid compatibility date: ${value}. Must be YYYY-MM-DD.`
+        )
+    }
+    return value
+}
+
 async function readStdin ():Promise<string> {
     const chunks:Buffer[] = []
     for await (const chunk of process.stdin) chunks.push(chunk as Buffer)
@@ -112,6 +134,7 @@ async function main () {
     const source = await readStdin()
     const { exitCode } = await runTestsInWorker(source, {
         vars: args.vars,
+        compatDate: args.compatDate,
         compatFlags: args.compatFlags,
         stdout: text => { process.stdout.write(text) },
         stderr: text => { process.stderr.write(text) },

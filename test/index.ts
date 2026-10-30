@@ -470,3 +470,18 @@ test('--compat-flag can be given more than once', async t => {
     t.deepEqual(compat, { process: true, navigator: false },
         'both flags take effect')
 })
+
+test('--compat-date 2024-09-23 runs successfully', async t => {
+    const { exitCode, stdout } = await run('_pass.js',
+        ['--compat-date', '2024-09-23'])
+    t.equal(exitCode, 0, 'should exit 0')
+    t.ok(stdout.split('\n').includes('ok 1 - x'), 'should print the test line')
+})
+
+test('--compat-date reaches the runtime', async t => {
+    // well-formed, but newer than any installed workerd supports
+    const { exitCode, stdout } = await run('_pass.js',
+        ['--compat-date', '2999-01-01'])
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(!stdout.includes('ok 1 - x'), 'the module should not run')
+})

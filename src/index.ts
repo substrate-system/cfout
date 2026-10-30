@@ -10,6 +10,11 @@ export interface RunOptions {
     stderr?:Writer;
     /** String variables, visible to the test as `globalThis.env` */
     vars?:Record<string, string>;
+    /**
+     * Workers compatibility date, `YYYY-MM-DD`. Defaults to the newest
+     * date the installed workerd supports.
+     */
+    compatDate?:string;
     /** Workers compatibility flags, such as `nodejs_compat` */
     compatFlags?:string[];
     /**
@@ -70,7 +75,7 @@ export async function runTestsInWorker (
             { type: 'ESModule', path: USER_PATH, contents: source },
         ],
         bindings: options.vars ?? {},
-        compatibilityDate: newestCompatDate(),
+        compatibilityDate: options.compatDate ?? newestCompatDate(),
         compatibilityFlags: options.compatFlags ?? [],
         log: new NoOpLog(),
         handleRuntimeStdio (runtimeOut:Readable, runtimeErr:Readable) {
