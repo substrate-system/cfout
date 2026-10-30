@@ -21,17 +21,30 @@ interface RunResult {
  * Bundle a fixture from `test/` with esbuild and pipe it into the
  * built CLI.
  */
-async function run (fixture:string, args:string[] = []):Promise<RunResult> {
-    const source = await bundle(fixture)
+async function run (
+    fixture:string,
+    args:string[] = [],
+    opts:BundleOptions = {}
+):Promise<RunResult> {
+    const source = await bundle(fixture, opts)
     return runSource(source, args)
 }
 
-async function bundle (fixture:string):Promise<string> {
+interface BundleOptions {
+    /** Leave `node:*` imports external, as cfout's input contract says */
+    nodeExternal?:boolean;
+}
+
+async function bundle (
+    fixture:string,
+    opts:BundleOptions = {}
+):Promise<string> {
     const result = await build({
         entryPoints: [path.join(ROOT, 'test', fixture)],
         bundle: true,
         format: 'esm',
         write: false,
+        external: opts.nodeExternal ? ['node:*'] : [],
     })
     return result.outputFiles[0].text
 }
@@ -428,3 +441,11 @@ test('an uncaught error ends the run without waiting for the timeout',
                 `${fixture} should complete by the uncaught error rule`)
         }
     })
+
+test('a module importing node:assert passes with nodejs_compat', async t => {
+    const { exitCode, stdout } = await run('_node-assert.js',
+        ['--compat-flag', 'nodejs_compat'], { nodeExternal: true })
+    t.equal(exitCode, 0, 'should exit 0')
+    t.ok(stdout.split('\n').includes('ok 1 - node:assert works'),
+        'stdout has the passing line')
+})

@@ -10,6 +10,8 @@ export interface RunOptions {
     stderr?:Writer;
     /** String variables, visible to the test as `globalThis.env` */
     vars?:Record<string, string>;
+    /** Workers compatibility flags, such as `nodejs_compat` */
+    compatFlags?:string[];
     /**
      * Milliseconds to wait for the run to complete, measured from when
      * the fetch is dispatched, so workerd startup does not count.
@@ -69,6 +71,7 @@ export async function runTestsInWorker (
         ],
         bindings: options.vars ?? {},
         compatibilityDate: newestCompatDate(),
+        compatibilityFlags: options.compatFlags ?? [],
         log: new NoOpLog(),
         handleRuntimeStdio (runtimeOut:Readable, runtimeErr:Readable) {
             // workerd's own stdout is not ours to print, stdout is for TAP

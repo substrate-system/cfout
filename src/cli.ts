@@ -9,6 +9,7 @@ runtime, and prints its output as TAP.
 
 Options:
   -t, --timeout <ms>         Timeout in milliseconds (default: 5000)
+  --compat-flag <name>       Compatibility flag, repeatable
   --var <KEY=VALUE>          Variable exposed as globalThis.env.KEY,
                              repeatable
   -h, --help                 Show this help message
@@ -17,13 +18,19 @@ Options:
 interface CliArgs {
     help:boolean;
     vars:Record<string, string>;
+    compatFlags:string[];
     timeout:number;
 }
 
 class ArgError extends Error {}
 
 function parseArgs (argv:string[]):CliArgs {
-    const args:CliArgs = { help: false, vars: {}, timeout: DEFAULT_TIMEOUT }
+    const args:CliArgs = {
+        help: false,
+        vars: {},
+        compatFlags: [],
+        timeout: DEFAULT_TIMEOUT,
+    }
 
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i]
@@ -41,6 +48,14 @@ function parseArgs (argv:string[]):CliArgs {
                     )
                 }
                 args.vars[value.slice(0, eq)] = value.slice(eq + 1)
+                break
+            }
+            case '--compat-flag': {
+                const value = argv[++i]
+                if (value === undefined || value === '') {
+                    throw new ArgError('--compat-flag requires a name')
+                }
+                args.compatFlags.push(value)
                 break
             }
             case '-t':
@@ -97,6 +112,7 @@ async function main () {
     const source = await readStdin()
     const { exitCode } = await runTestsInWorker(source, {
         vars: args.vars,
+        compatFlags: args.compatFlags,
         stdout: text => { process.stdout.write(text) },
         stderr: text => { process.stderr.write(text) },
         timeout: args.timeout,
