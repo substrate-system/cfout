@@ -219,3 +219,12 @@ test('an indented subtest plan does not end the run', async t => {
     t.ok(lines.includes('ok 1 - outer'), 'stdout has the outer test point')
     t.ok(lines.includes('1..1'), 'stdout has the top-level plan')
 })
+
+test('a not ok line fails a run that matches its plan', async t => {
+    const { exitCode } = await run('_plan-fail.js')
+    t.equal(exitCode, 1, 'should exit 1')
+
+    const { summary } = await runTestsInWorker(await bundle('_plan-fail.js'))
+    t.equal(summary.reason, 'plan', 'should complete by the plan rule')
+    t.equal(summary.notOk, 1, 'should count the failing test point')
+})
