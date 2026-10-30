@@ -48,6 +48,18 @@ Single-context layout. See `docs/agents/domain.md`.
   `globalThis` (a call like `real.setTimeout(...)` breaks every run).
 - Top-level `await` in the user module currently gets the request
   cancelled with no output.
+- Uncaught errors go through `reportUncaught(err)` in
+  `src/entry-worker.ts` (ends the run with reason `uncaught`). Its
+  stack goes out on the warn channel so it reaches stderr without
+  counting as a `console.error` call.
+- workerd never dispatches `unhandledrejection` for a promise rejected
+  while the user module evaluates (global scope), whatever scope the
+  listener was added in. Only rejections in request context (after the
+  import resolves) are reported.
+- A run that breaks usually still exits promptly, because workerd
+  cancels the request, so "exit 1, not killed" does not prove a
+  completion rule fired. Assert `summary.reason` via
+  `runTestsInWorker` to check that.
 
 ## Testing
 

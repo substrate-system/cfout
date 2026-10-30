@@ -346,3 +346,85 @@ test('a tapzero suite with a failing assertion exits 1', async t => {
     t.ok(stdout.split('\n').some(line => /^not ok \d+/.test(line)),
         'stdout has a not ok line')
 })
+
+/**
+ * Does stdout have a top-level `not ok` line with the given message?
+ */
+function hasNotOk (stdout:string, message:string):boolean {
+    return stdout.split('\n').some(line => (
+        /^not ok\b/.test(line) && line.includes(message)
+    ))
+}
+
+test('a module that throws at top level exits 1 and reports the error',
+    async t => {
+        const { exitCode, signal, stdout, stderr } = await run('_throw.js')
+        t.equal(signal, null, 'cfout should exit by itself, not be killed')
+        t.equal(exitCode, 1, 'should exit 1')
+        t.ok(hasNotOk(stdout, 'boom at top level'),
+            'stdout has a not ok line with the message')
+        t.ok(stderr.includes('boom at top level'), 'stderr has the message')
+        t.ok(stderr.includes('explode'), 'stderr has the stack')
+        t.ok(!/timed out/i.test(stderr), 'the run did not time out')
+    })
+
+test('a module with an unhandled rejection exits 1 and reports it',
+    async t => {
+        const { exitCode, signal, stdout, stderr } = await run('_rejection.js')
+        t.equal(signal, null, 'cfout should exit by itself, not be killed')
+        t.equal(exitCode, 1, 'should exit 1')
+        t.ok(hasNotOk(stdout, 'nobody caught this'),
+            'stdout has a not ok line with the message')
+        t.ok(stderr.includes('nobody caught this'), 'stderr has the message')
+        t.ok(!/timed out/i.test(stderr), 'the run did not time out')
+    })
+
+test('a top-level setTimeout callback that throws exits 1 and reports it',
+    async t => {
+        const { exitCode, signal, stdout, stderr } = await run(
+            '_timer-throw.js'
+        )
+        t.equal(signal, null, 'cfout should exit by itself, not be killed')
+        t.equal(exitCode, 1, 'should exit 1')
+        t.ok(hasNotOk(stdout, 'thrown from a timer'),
+            'stdout has a not ok line with the message')
+        t.ok(stderr.includes('thrown from a timer'), 'stderr has the message')
+        t.ok(!/timed out/i.test(stderr), 'the run did not time out')
+    })
+
+test('crypto.randomUUID() at top level fails with the runtime error',
+    async t => {
+        const { exitCode, signal, stdout, stderr } = await run(
+            '_random-uuid.js'
+        )
+        t.equal(signal, null, 'cfout should exit by itself, not be killed')
+        t.equal(exitCode, 1, 'should exit 1')
+        t.ok(stdout.split('\n').some(line => /^not ok\b/.test(line)),
+            'stdout has a not ok line')
+        // the runtime's message names global scope and points at the fix
+        t.ok(/global scope/i.test(stderr), 'stderr has the runtime error')
+        t.ok(!/timed out/i.test(stderr), 'the run did not time out')
+    })
+
+test('an uncaught error ends the run without waiting for the timeout',
+    async t => {
+        for (const fixture of [
+            '_throw.js',
+            '_rejection.js',
+            '_timer-throw.js',
+            '_random-uuid.js',
+        ]) {
+            // the run limit kills cfout long before this timeout
+            const { exitCode, signal } = await run(fixture,
+                ['--timeout', '60000'])
+            t.equal(signal, null, `${fixture} should exit by itself`)
+            t.equal(exitCode, 1, `${fixture} should exit 1`)
+
+            const { summary } = await runTestsInWorker(
+                await bundle(fixture),
+                { timeout: 60000 }
+            )
+            t.equal(summary.reason, 'uncaught',
+                `${fixture} should complete by the uncaught error rule`)
+        }
+    })
