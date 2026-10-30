@@ -315,3 +315,34 @@ test('a bad --timeout value prints an error and exits 1', async t => {
             `${args.join(' ')} should print an error`)
     }
 })
+
+test('a passing tapzero suite exits 0 with an ok line per assertion',
+    async t => {
+        const { exitCode, stdout } = await run('_tapzero-pass.js')
+        t.equal(exitCode, 0, 'should exit 0')
+        const oks = stdout.split('\n').filter(line => /^ok \d+/.test(line))
+        t.equal(oks.length, 3, 'should print an ok line per assertion')
+    })
+
+test('a tapzero test that awaits a setTimeout promise passes', async t => {
+    const { exitCode, stdout } = await run('_tapzero-await.js')
+    t.equal(exitCode, 0, 'should exit 0')
+    t.ok(stdout.split('\n').some(line => (
+        /^ok \d+/.test(line) && line.includes('the timer resolved')
+    )), 'stdout has the passing assertion')
+})
+
+test('a top-level setInterval cleared from its callback completes',
+    async t => {
+        const { exitCode, stdout } = await run('_interval.js')
+        t.equal(exitCode, 0, 'should exit 0')
+        t.ok(stdout.split('\n').includes('# calls 3'),
+            'the interval stopped after the third call')
+    })
+
+test('a tapzero suite with a failing assertion exits 1', async t => {
+    const { exitCode, stdout } = await run('_tapzero-fail.js')
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(stdout.split('\n').some(line => /^not ok \d+/.test(line)),
+        'stdout has a not ok line')
+})
