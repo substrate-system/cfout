@@ -28,7 +28,7 @@ No em dashes or arrow characters. No tests for the docs.
 
 **Touches:** `README.md`
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Every flag in `cfout --help` is documented in the README
 - [x] The pipeline example in the README runs successfully against a
