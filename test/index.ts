@@ -391,3 +391,17 @@ test('a top-level setTimeout callback that throws exits 1 and reports it',
         t.ok(stderr.includes('thrown from a timer'), 'stderr has the message')
         t.ok(!/timed out/i.test(stderr), 'the run did not time out')
     })
+
+test('crypto.randomUUID() at top level fails with the runtime error',
+    async t => {
+        const { exitCode, signal, stdout, stderr } = await run(
+            '_random-uuid.js'
+        )
+        t.equal(signal, null, 'cfout should exit by itself, not be killed')
+        t.equal(exitCode, 1, 'should exit 1')
+        t.ok(stdout.split('\n').some(line => /^not ok\b/.test(line)),
+            'stdout has a not ok line')
+        // the runtime's message names global scope and points at the fix
+        t.ok(/global scope/i.test(stderr), 'stderr has the runtime error')
+        t.ok(!/timed out/i.test(stderr), 'the run did not time out')
+    })
