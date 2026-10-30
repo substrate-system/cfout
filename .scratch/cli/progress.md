@@ -17,5 +17,8 @@ Started: 2026-10-30T20:09:39.489Z
 - [ ] 04-timer-shim.md
 - [ ] 05-uncaught-errors.md
 - [ ] 06-compat-settings.md
-- [ ] 07-vars.md
+- [x] 07-vars.md
+  branch: cfout--cli-07-vars
+  exit: 0
+  completed: 2026-10-30T20:22:28.639Z
 - [ ] 08-readme.md
