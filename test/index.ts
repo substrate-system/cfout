@@ -178,3 +178,18 @@ test('--var FOO=bar is visible as globalThis.env.FOO', async t => {
     const without = await run('_var.js')
     t.equal(without.exitCode, 1, 'should exit 1 without the var')
 })
+
+/**
+ * Run the fixture that logs `globalThis.env` as read at module top level,
+ * and parse what it logged.
+ */
+async function envAtTopLevel (args:string[]):Promise<unknown> {
+    const { stdout } = await run('_env-echo.js', args)
+    const line = stdout.split('\n').find(l => l.startsWith('# env '))
+    return line ? JSON.parse(line.slice('# env '.length)) : undefined
+}
+
+test('two --var flags are both visible on globalThis.env', async t => {
+    const env = await envAtTopLevel(['--var', 'A=1', '--var', 'B=2'])
+    t.deepEqual(env, { A: '1', B: '2' }, 'env should have both vars')
+})
