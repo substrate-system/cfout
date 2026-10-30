@@ -22,7 +22,7 @@ channel), `test/index.ts`, new plan fixtures under `test/`
 
 **Status:** ready-for-agent
 
-- [ ] Two `ok` lines followed by `1..2` exits 0 without needing
+- [x] Two `ok` lines followed by `1..2` exits 0 without needing
       `testsFinished`
 - [ ] `1..2` followed by two `ok` lines exits 0 without needing
       `testsFinished`
