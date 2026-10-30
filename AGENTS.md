@@ -84,6 +84,19 @@ Single-context layout. See `docs/agents/domain.md`.
 - When mutating source to prove a test can fail, back the file up
   (`cp`) and restore from the backup. `git checkout <file>` also throws
   away any uncommitted implementation in it.
+- A fixture that imports `node:*` must be bundled with those imports
+  external: `run(fixture, args, { nodeExternal: true })`. Without
+  `--compat-flag nodejs_compat` the import rejects and the run is
+  reported as an uncaught error.
+- To observe a compatibility flag from a test, pick one with a
+  global-visible effect (`nodejs_compat` defines `process`,
+  `no_global_navigator` removes `navigator`); see `_compat-echo.js`.
+- A well-formed compat date newer than the installed workerd makes
+  Miniflare fail to start ("is in the future and unsupported"), which
+  is a cheap way to prove a date reaches the runtime.
+- Error assertions on argument errors should check
+  `stderr.startsWith('Error:')`. A crash prints `cfout: <Name>Error:`,
+  which also contains `Error:`.
 - To prove a test that passes on first run can fail, break the source
   temporarily, then run the raw TAP:
   `npm run build && npx esbuild test/index.ts --bundle --format=esm
