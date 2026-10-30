@@ -41,11 +41,11 @@ complete through the plan rule from 03.
 
 **Status:** ready-for-agent
 
-- [ ] A passing tapzero suite of several tests exits 0 with an `ok`
+- [x] A passing tapzero suite of several tests exits 0 with an `ok`
       line per assertion on stdout
-- [ ] A tapzero test that awaits a `setTimeout` promise passes and the
+- [x] A tapzero test that awaits a `setTimeout` promise passes and the
       suite exits 0
-- [ ] A module that calls `setInterval` at top level and clears it from
+- [x] A module that calls `setInterval` at top level and clears it from
       inside the callback completes
-- [ ] A tapzero suite with one failing assertion exits 1 with a
+- [x] A tapzero suite with one failing assertion exits 1 with a
       `not ok` line on stdout
