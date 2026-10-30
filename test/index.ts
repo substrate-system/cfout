@@ -485,3 +485,21 @@ test('--compat-date reaches the runtime', async t => {
     t.equal(exitCode, 1, 'should exit 1')
     t.ok(!stdout.includes('ok 1 - x'), 'the module should not run')
 })
+
+test('a bad --compat-date value prints an error and exits 1', async t => {
+    for (const args of [
+        ['--compat-date', 'nope'],
+        ['--compat-date', '2024-13-45'],
+        ['--compat-date'],
+    ]) {
+        const { exitCode, stdout, stderr } = await runSource(
+            await bundle('_pass.js'),
+            args
+        )
+        t.equal(exitCode, 1, `${args.join(' ')} should exit 1`)
+        // an argument error, not a crash with a stack
+        t.ok(stderr.startsWith('Error:'),
+            `${args.join(' ')} should print an argument error`)
+        t.equal(stdout, '', 'nothing should run')
+    }
+})

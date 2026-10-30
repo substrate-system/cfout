@@ -97,10 +97,13 @@ function parseCompatDate (value:string|undefined):string {
     if (value === undefined) {
         throw new ArgError('--compat-date requires a value')
     }
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
     // a real calendar day survives the round trip through Date
-    const valid = match && new Date(`${value}T00:00:00Z`)
-        .toISOString().startsWith(value)
+    const date = new Date(`${value}T00:00:00Z`)
+    const valid = (
+        /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+        !Number.isNaN(date.getTime()) &&
+        date.toISOString().startsWith(value)
+    )
     if (!valid) {
         throw new ArgError(
             `Invalid compatibility date: ${value}. Must be YYYY-MM-DD.`
