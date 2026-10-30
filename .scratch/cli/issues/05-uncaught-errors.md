@@ -19,7 +19,7 @@ fail the run with workerd's error message, which points at the fix.
 `unhandledrejection` listener, `reportUncaught` for replayed
 callbacks), `test/index.ts`, new fixtures under `test/`
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A module that throws at top level exits 1, with a `not ok` line
       on stdout and the error message and stack on stderr
@@ -27,7 +27,7 @@ callbacks), `test/index.ts`, new fixtures under `test/`
       `not ok` line on stdout and the message on stderr
 - [x] A module whose top-level `setTimeout` callback throws exits 1,
       with a `not ok` line on stdout and the message on stderr
-- [ ] A module that calls `crypto.randomUUID()` at top level exits 1
+- [x] A module that calls `crypto.randomUUID()` at top level exits 1
       with the runtime's error message on stderr
-- [ ] Each of these runs exits promptly, without waiting for the
+- [x] Each of these runs exits promptly, without waiting for the
       timeout
