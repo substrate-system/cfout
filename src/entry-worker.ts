@@ -128,6 +128,9 @@ export default {
         const replayed = new Map()
         for (const name of ['setTimeout', 'setInterval']) {
             globalThis[name] = (fn, ms, ...args) => {
+                // a reference captured at top level is still this shim
+                // after the replay, so it forwards once the run is live
+                if (live) return real[name](fn, ms, ...args)
                 const id = nextId--
                 queued.set(id, [name, fn, ms, args])
                 return id

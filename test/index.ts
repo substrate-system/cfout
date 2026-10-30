@@ -290,6 +290,16 @@ test('a not ok line fails a run that matches its plan', async t => {
     t.equal(summary.notOk, 1, 'should count the failing test point')
 })
 
+test('a timer function captured at top level works after the replay',
+    async t => {
+        const { exitCode, summary } = await runTestsInWorker(
+            await bundle('_captured-timer.js'),
+            { stdout: () => {}, stderr: () => {}, timeout: 1500 }
+        )
+        t.equal(summary.reason, 'plan', 'should complete by the plan rule')
+        t.equal(exitCode, 0, 'should exit 0')
+    })
+
 test('a module that never finishes exits 1 at --timeout', async t => {
     const { exitCode, signal, stdout, stderr } = await run('_hang.js',
         ['--timeout', '500'])
