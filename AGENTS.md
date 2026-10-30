@@ -41,3 +41,13 @@ Single-context layout. See `docs/agents/domain.md`.
 - Each run starts a real workerd, roughly 100-300ms per test.
 - Check `npm run lint` by exit code, not by grepping for "error": eslint
   config errors are printed in prose.
+- Lint also covers the `test/_*.js` fixtures, and its
+  `operator-linebreak` rule rejects the trailing-`?` multi-line ternary.
+  Keep ternaries in fixtures on one line.
+- To read worker-side state in a test, have a fixture log it as JSON
+  on a `# ...` comment line and parse that line from stdout (see
+  `_env-echo.js`).
+- To prove a test that passes on first run can fail, break the source
+  temporarily, then run the raw TAP:
+  `npm run build && npx esbuild test/index.ts --bundle --format=esm
+  --platform=node --packages=external | node --input-type=module`.
