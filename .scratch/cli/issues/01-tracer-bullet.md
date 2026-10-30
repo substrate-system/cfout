@@ -64,22 +64,22 @@ here print raw TAP with `console.log` and set
 
 **Status:** ready-for-agent
 
-- [ ] A module that logs `ok 1 - x` and then sets
+- [x] A module that logs `ok 1 - x` and then sets
       `globalThis.testsFinished = true` exits 0 with `ok 1 - x` on
       stdout
 - [ ] A module that logs a `not ok` line and then sets the flag exits 1
-- [ ] Setting `globalThis.testsFinished` to a value other than `true`
+- [x] Setting `globalThis.testsFinished` to a value other than `true`
       does not end the run
-- [ ] `console.log`, `console.info` and `console.debug` output appears
+- [x] `console.log`, `console.info` and `console.debug` output appears
       on stdout and not on stderr
-- [ ] `console.warn` output appears on stderr and not on stdout
+- [x] `console.warn` output appears on stderr and not on stdout
 - [ ] A module that calls `console.error` and otherwise passes exits 1,
       with the message on stderr
 - [ ] Console output produced at module top level (during evaluation)
       appears on stdout
 - [ ] stdout contains no Miniflare log lines
-- [ ] `runTestsInWorker` called directly with a passing source resolves
+- [x] `runTestsInWorker` called directly with a passing source resolves
       to exit code 0 and writes only through the injected writers
 - [ ] `cfout --help` prints usage and exits 0
 - [ ] `cfout --bogus` prints an error to stderr and exits 1
-- [ ] `npm run lint` passes
+- [x] `npm run lint` passes
