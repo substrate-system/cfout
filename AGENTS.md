@@ -26,6 +26,13 @@ Single-context layout. See `docs/agents/domain.md`.
   dropped by workerd (global scope). The entry worker buffers them until
   the import resolves; anything new that writes during evaluation must
   go through that buffer.
+- Completion rules that the worker decides (`testsFinished`, TAP plan)
+  go through `requestFinish(reason)` in `src/entry-worker.ts`, which
+  defers until the import resolves. Output after a requested finish is
+  dropped. Lines the wrapper itself writes to stdout must use `write()`,
+  not `emit()`, or plan tracking counts them as test points.
+- A `not ok` line written by the worker on the log channel is enough to
+  fail the run; Node counts it like any other.
 - workerd cancels a request that has no pending I/O. A run that never
   completes and has nothing scheduled ends with no `done` control line,
   not a hang.
