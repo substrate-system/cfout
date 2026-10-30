@@ -331,3 +331,11 @@ test('a tapzero test that awaits a setTimeout promise passes', async t => {
         /^ok \d+/.test(line) && line.includes('the timer resolved')
     )), 'stdout has the passing assertion')
 })
+
+test('a top-level setInterval cleared from its callback completes',
+    async t => {
+        const { exitCode, stdout } = await run('_interval.js')
+        t.equal(exitCode, 0, 'should exit 0')
+        t.ok(stdout.split('\n').includes('# calls 3'),
+            'the interval stopped after the third call')
+    })

@@ -114,23 +114,47 @@ export default {
         // Global scope forbids timers, so calls made while the user
         // module evaluates are queued and replayed with the real timers
         // once the import resolves, inside the request.
-        const realSetTimeout = globalThis.setTimeout
-        const queued = []
-        globalThis.setTimeout = (fn, ms, ...args) => {
-            queued.push([fn, ms, args])
-            return -1
+        // bound, since workerd rejects a call with another \`this\`
+        const real = {
+            setTimeout: globalThis.setTimeout.bind(globalThis),
+            setInterval: globalThis.setInterval.bind(globalThis),
+            clearTimeout: globalThis.clearTimeout.bind(globalThis),
+            clearInterval: globalThis.clearInterval.bind(globalThis),
+        }
+        // queued calls get negative ids so they never collide with real
+        // ones; replayed maps them to the id of the real timer
+        let nextId = -1
+        const queued = new Map()
+        const replayed = new Map()
+        for (const name of ['setTimeout', 'setInterval']) {
+            globalThis[name] = (fn, ms, ...args) => {
+                const id = nextId--
+                queued.set(id, [name, fn, ms, args])
+                return id
+            }
+        }
+        // the clear functions stay wrapped, so an id handed out at top
+        // level still works after the replay
+        for (const name of ['clearTimeout', 'clearInterval']) {
+            globalThis[name] = (id) => {
+                if (queued.delete(id)) return
+                return real[name](replayed.has(id) ? replayed.get(id) : id)
+            }
         }
 
         function replayTimers () {
-            globalThis.setTimeout = realSetTimeout
-            for (const [fn, ms, args] of queued.splice(0)) {
-                realSetTimeout(() => {
+            globalThis.setTimeout = real.setTimeout
+            globalThis.setInterval = real.setInterval
+            const calls = [...queued]
+            queued.clear()
+            for (const [id, [name, fn, ms, args]] of calls) {
+                replayed.set(id, real[name](() => {
                     try {
                         fn(...args)
                     } catch {
                         // a throw here would cancel the request
                     }
-                }, ms)
+                }, ms))
             }
         }
 
