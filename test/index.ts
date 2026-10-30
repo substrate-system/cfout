@@ -211,3 +211,11 @@ test('a 1..0 plan with a SKIP directive passes', async t => {
     const { exitCode } = await run('_plan-skip.js')
     t.equal(exitCode, 0, 'should exit 0')
 })
+
+test('an indented subtest plan does not end the run', async t => {
+    const { exitCode, stdout } = await run('_plan-subtest.js')
+    t.equal(exitCode, 0, 'should exit 0')
+    const lines = stdout.split('\n')
+    t.ok(lines.includes('ok 1 - outer'), 'stdout has the outer test point')
+    t.ok(lines.includes('1..1'), 'stdout has the top-level plan')
+})
