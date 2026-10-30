@@ -120,3 +120,39 @@ test('stdout carries only the module output, no Miniflare logs', async t => {
     const { stdout } = await run('_pass.js')
     t.equal(stdout, 'ok 1 - x\n', 'stdout is exactly the TAP the module printed')
 })
+
+test('runTestsInWorker writes only through the injected writers', async t => {
+    const source = await bundle('_stderr-too.js')
+    const out:string[] = []
+    const err:string[] = []
+
+    // anything written straight to the process streams during the run is
+    // captured here instead of reaching the terminal
+    const leaked:string[] = []
+    const realOut = process.stdout.write
+    const realErr = process.stderr.write
+    const capture = (chunk:string|Uint8Array) => {
+        leaked.push(chunk.toString())
+        return true
+    }
+    process.stdout.write = capture as typeof process.stdout.write
+    process.stderr.write = capture as typeof process.stderr.write
+
+    let result
+    try {
+        result = await runTestsInWorker(source, {
+            stdout: text => { out.push(text) },
+            stderr: text => { err.push(text) },
+        })
+    } finally {
+        process.stdout.write = realOut
+        process.stderr.write = realErr
+    }
+
+    t.equal(result.exitCode, 0, 'should resolve to exit code 0')
+    t.equal(result.summary.reason, 'testsFinished',
+        'summary should say how the run completed')
+    t.equal(out.join(''), 'ok 1 - x\n', 'stdout writer got the TAP')
+    t.ok(err.join('').includes('a warning'), 'stderr writer got the warning')
+    t.equal(leaked.length, 0, 'nothing was written to the process streams')
+})
