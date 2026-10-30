@@ -193,3 +193,10 @@ function hasMismatch (stdout:string, planned:number, ran:number):boolean {
         line.includes(`ran ${ran}`)
     ))
 }
+
+test('fewer test points than planned is reported when testsFinished ends ' +
+    'the run', async t => {
+    const { exitCode, stdout } = await run('_plan-short.js')
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(hasMismatch(stdout, 3, 2), 'stdout reports the plan mismatch')
+})
