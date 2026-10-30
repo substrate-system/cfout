@@ -198,3 +198,8 @@ test('--var splits on the first =', async t => {
     const env = await envAtTopLevel(['--var', 'A=b=c'])
     t.deepEqual(env, { A: 'b=c' }, 'the value keeps the later =')
 })
+
+test('globalThis.env is readable at module top level', async t => {
+    const env = await envAtTopLevel(['--var', 'FOO=bar'])
+    t.deepEqual(env, { FOO: 'bar' }, 'top-level code sees the var')
+})
