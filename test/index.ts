@@ -162,3 +162,9 @@ test('cfout --help prints usage and exits 0', async t => {
     t.equal(exitCode, 0, 'should exit 0')
     t.ok(stdout.includes('Usage: cfout'), 'should print the usage block')
 })
+
+test('cfout --bogus prints an error to stderr and exits 1', async t => {
+    const { exitCode, stderr } = await runSource('', ['--bogus'])
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(stderr.includes('--bogus'), 'stderr should name the bad option')
+})
