@@ -165,6 +165,12 @@ export async function runTestsInWorker (
         return { exitCode: 1, summary }
     }
 
+    if (summary.reason === null) {
+        // workerd cancelled the request before any completion rule fired
+        stderr('cfout: the run ended without completing' +
+            ' (no plan, testsFinished, or error)\n')
+    }
+
     const passed = (
         summary.reason !== null &&
         summary.notOk === 0 &&

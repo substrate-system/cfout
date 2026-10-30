@@ -302,6 +302,13 @@ test('a timer function captured at top level works after the replay',
         t.equal(exitCode, 0, 'should exit 0')
     })
 
+test('a run that ends without completing says so on stderr', async t => {
+    const { exitCode, stdout, stderr } = await run('_no-completion.js')
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(stdout.split('\n').includes('ok 1 - a'), 'the test point is printed')
+    t.ok(stderr.trim().length > 0, 'stderr explains the failure')
+})
+
 test('a module that never finishes exits 1 at --timeout', async t => {
     const { exitCode, signal, stdout, stderr } = await run('_hang.js',
         ['--timeout', '500'])
