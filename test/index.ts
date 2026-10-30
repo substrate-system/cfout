@@ -168,3 +168,13 @@ test('cfout --bogus prints an error to stderr and exits 1', async t => {
     t.equal(exitCode, 1, 'should exit 1')
     t.ok(stderr.includes('--bogus'), 'stderr should name the bad option')
 })
+
+test('--var FOO=bar is visible as globalThis.env.FOO', async t => {
+    const withVar = await run('_var.js', ['--var', 'FOO=bar'])
+    t.equal(withVar.exitCode, 0, 'should exit 0 with the var set')
+    t.ok(withVar.stdout.split('\n').includes('ok 1 - env.FOO is bar'),
+        'should print the passing line')
+
+    const without = await run('_var.js')
+    t.equal(without.exitCode, 1, 'should exit 1 without the var')
+})

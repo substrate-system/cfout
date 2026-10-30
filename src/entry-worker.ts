@@ -107,6 +107,9 @@ export default {
             }
         })
 
+        // test code reads its --var values the way a worker would name them
+        globalThis.env = env
+
         import(${JSON.stringify(userModule)}).then(goLive, goLive)
 
         return new Response(readable, {

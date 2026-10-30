@@ -8,20 +8,39 @@ Reads a bundled ES module from stdin, runs it in the Cloudflare Workers
 runtime, and prints its output as TAP.
 
 Options:
+  --var <KEY=VALUE>          Variable exposed as globalThis.env.KEY,
+                             repeatable
   -h, --help                 Show this help message
 `
 
 interface CliArgs {
     help:boolean;
+    vars:Record<string, string>;
 }
 
 class ArgError extends Error {}
 
 function parseArgs (argv:string[]):CliArgs {
-    const args:CliArgs = { help: false }
+    const args:CliArgs = { help: false, vars: {} }
 
-    for (const arg of argv) {
+    for (let i = 0; i < argv.length; i++) {
+        const arg = argv[i]
         switch (arg) {
+            case '--var': {
+                const value = argv[++i]
+                if (value === undefined) {
+                    throw new ArgError('--var requires a KEY=VALUE argument')
+                }
+                // split on the first `=`, the value may contain more
+                const eq = value.indexOf('=')
+                if (eq < 1) {
+                    throw new ArgError(
+                        `Invalid --var value: ${value} (expected KEY=VALUE)`
+                    )
+                }
+                args.vars[value.slice(0, eq)] = value.slice(eq + 1)
+                break
+            }
             case '-h':
             case '--help':
                 args.help = true
@@ -58,6 +77,7 @@ async function main () {
 
     const source = await readStdin()
     const { exitCode } = await runTestsInWorker(source, {
+        vars: args.vars,
         stdout: text => { process.stdout.write(text) },
         stderr: text => { process.stderr.write(text) },
     })

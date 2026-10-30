@@ -8,6 +8,8 @@ export type Writer = (text:string) => void
 export interface RunOptions {
     stdout?:Writer;
     stderr?:Writer;
+    /** String variables, visible to the test as `globalThis.env` */
+    vars?:Record<string, string>;
 }
 
 export interface CompletionSummary {
@@ -53,6 +55,7 @@ export async function runTestsInWorker (
             },
             { type: 'ESModule', path: USER_PATH, contents: source },
         ],
+        bindings: options.vars ?? {},
         compatibilityDate: newestCompatDate(),
         log: new NoOpLog(),
         handleRuntimeStdio (runtimeOut:Readable, runtimeErr:Readable) {
