@@ -200,3 +200,9 @@ test('fewer test points than planned is reported when testsFinished ends ' +
     t.equal(exitCode, 1, 'should exit 1')
     t.ok(hasMismatch(stdout, 3, 2), 'stdout reports the plan mismatch')
 })
+
+test('more test points than a trailing plan is reported', async t => {
+    const { exitCode, stdout } = await run('_plan-extra.js')
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(hasMismatch(stdout, 2, 3), 'stdout reports the plan mismatch')
+})
