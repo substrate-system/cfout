@@ -206,3 +206,8 @@ test('more test points than a trailing plan is reported', async t => {
     t.equal(exitCode, 1, 'should exit 1')
     t.ok(hasMismatch(stdout, 2, 3), 'stdout reports the plan mismatch')
 })
+
+test('a 1..0 plan with a SKIP directive passes', async t => {
+    const { exitCode } = await run('_plan-skip.js')
+    t.equal(exitCode, 0, 'should exit 0')
+})
