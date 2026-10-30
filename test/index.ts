@@ -323,3 +323,11 @@ test('a passing tapzero suite exits 0 with an ok line per assertion',
         const oks = stdout.split('\n').filter(line => /^ok \d+/.test(line))
         t.equal(oks.length, 3, 'should print an ok line per assertion')
     })
+
+test('a tapzero test that awaits a setTimeout promise passes', async t => {
+    const { exitCode, stdout } = await run('_tapzero-await.js')
+    t.equal(exitCode, 0, 'should exit 0')
+    t.ok(stdout.split('\n').some(line => (
+        /^ok \d+/.test(line) && line.includes('the timer resolved')
+    )), 'stdout has the passing assertion')
+})
