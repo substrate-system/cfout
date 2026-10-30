@@ -6,13 +6,10 @@
 [![semantic versioning](https://img.shields.io/badge/semver-2.0.0-blue?logo=semver&style=flat-square)](https://semver.org/)
 [![license](https://img.shields.io/badge/license-Big_Time-blue?style=flat-square)](LICENSE)
 
-Run tests in the Cloudflare Workers runtime. Pipe in a bundled test
-script, get TAP out, exit non-zero on failure.
+Run tests in the Cloudflare Workers runtime.
+Pipe in a bundled test script, get TAP out, exit non-zero on failure.
 
-Libraries that target Cloudflare Workers are usually tested in Node, so
-Node-only assumptions (missing globals, timers at module scope, Node
-built-ins) show up only after deploying. The usual way to test inside
-the real runtime (workerd) is vitest with
+The usual way to test inside the real runtime (workerd) is `vitest` with
 `@cloudflare/vitest-pool-workers`, which means adopting vitest, a vite
 config, a wrangler config and a pool plugin.
 
