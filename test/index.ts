@@ -339,3 +339,10 @@ test('a top-level setInterval cleared from its callback completes',
         t.ok(stdout.split('\n').includes('# calls 3'),
             'the interval stopped after the third call')
     })
+
+test('a tapzero suite with a failing assertion exits 1', async t => {
+    const { exitCode, stdout } = await run('_tapzero-fail.js')
+    t.equal(exitCode, 1, 'should exit 1')
+    t.ok(stdout.split('\n').some(line => /^not ok \d+/.test(line)),
+        'stdout has a not ok line')
+})
