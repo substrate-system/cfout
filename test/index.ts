@@ -115,3 +115,8 @@ test('console output from module evaluation appears on stdout', async t => {
     t.ok(lines.includes('ok 1 - logged at top level'),
         'stdout has the second line')
 })
+
+test('stdout carries only the module output, no Miniflare logs', async t => {
+    const { stdout } = await run('_pass.js')
+    t.equal(stdout, 'ok 1 - x\n', 'stdout is exactly the TAP the module printed')
+})
