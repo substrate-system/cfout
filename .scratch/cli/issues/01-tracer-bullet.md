@@ -62,24 +62,24 @@ here print raw TAP with `console.log` and set
 `src/entry-worker.ts` (generated entry worker source), `test/index.ts`,
 `test/_*.js` fixtures
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A module that logs `ok 1 - x` and then sets
       `globalThis.testsFinished = true` exits 0 with `ok 1 - x` on
       stdout
-- [ ] A module that logs a `not ok` line and then sets the flag exits 1
+- [x] A module that logs a `not ok` line and then sets the flag exits 1
 - [x] Setting `globalThis.testsFinished` to a value other than `true`
       does not end the run
 - [x] `console.log`, `console.info` and `console.debug` output appears
       on stdout and not on stderr
 - [x] `console.warn` output appears on stderr and not on stdout
-- [ ] A module that calls `console.error` and otherwise passes exits 1,
+- [x] A module that calls `console.error` and otherwise passes exits 1,
       with the message on stderr
-- [ ] Console output produced at module top level (during evaluation)
+- [x] Console output produced at module top level (during evaluation)
       appears on stdout
-- [ ] stdout contains no Miniflare log lines
+- [x] stdout contains no Miniflare log lines
 - [x] `runTestsInWorker` called directly with a passing source resolves
       to exit code 0 and writes only through the injected writers
-- [ ] `cfout --help` prints usage and exits 0
-- [ ] `cfout --bogus` prints an error to stderr and exits 1
+- [x] `cfout --help` prints usage and exits 0
+- [x] `cfout --bogus` prints an error to stderr and exits 1
 - [x] `npm run lint` passes
