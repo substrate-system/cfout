@@ -170,6 +170,23 @@ export default {
             finishRequested = finishRequested || reason
         }
 
+        // Rule 3: an uncaught error ends the run. Both lines are written
+        // directly, the not ok line so it is not counted as a test point
+        // and the stack on the warn channel so it is not counted as a
+        // console.error call.
+        function reportUncaught (err) {
+            if (finished || finishRequested) return
+            const message = (err instanceof Error ? err.message : format(err))
+                .split('\\n')[0]
+            write(\`\${PREFIX.log}not ok - \${message}\\n\`)
+            const detail = err instanceof Error && err.stack ?
+                err.stack :
+                message
+            write(detail.split('\\n')
+                .map(line => PREFIX.warn + line + '\\n').join(''))
+            requestFinish('uncaught')
+        }
+
         for (const method of METHODS) {
             console[method] = (...args) => {
                 emit(PREFIX[method], args.map(format).join(' '))
@@ -190,7 +207,10 @@ export default {
         // test code reads its --var values the way a worker would name them
         globalThis.env = env
 
-        import(${JSON.stringify(userModule)}).then(goLive, goLive)
+        import(${JSON.stringify(userModule)}).then(goLive, (err) => {
+            reportUncaught(err)
+            goLive()
+        })
 
         return new Response(readable, {
             headers: { 'content-type': 'text/plain; charset=utf-8' }

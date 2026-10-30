@@ -346,3 +346,24 @@ test('a tapzero suite with a failing assertion exits 1', async t => {
     t.ok(stdout.split('\n').some(line => /^not ok \d+/.test(line)),
         'stdout has a not ok line')
 })
+
+/**
+ * Does stdout have a top-level `not ok` line with the given message?
+ */
+function hasNotOk (stdout:string, message:string):boolean {
+    return stdout.split('\n').some(line => (
+        /^not ok\b/.test(line) && line.includes(message)
+    ))
+}
+
+test('a module that throws at top level exits 1 and reports the error',
+    async t => {
+        const { exitCode, signal, stdout, stderr } = await run('_throw.js')
+        t.equal(signal, null, 'cfout should exit by itself, not be killed')
+        t.equal(exitCode, 1, 'should exit 1')
+        t.ok(hasNotOk(stdout, 'boom at top level'),
+            'stdout has a not ok line with the message')
+        t.ok(stderr.includes('boom at top level'), 'stderr has the message')
+        t.ok(stderr.includes('explode'), 'stderr has the stack')
+        t.ok(!/timed out/i.test(stderr), 'the run did not time out')
+    })
