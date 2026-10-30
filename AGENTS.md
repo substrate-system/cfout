@@ -46,6 +46,9 @@ Single-context layout. See `docs/agents/domain.md`.
   wrapped for the whole run to translate them. workerd builtins called
   with a different `this` throw, so keep saved timer functions bound to
   `globalThis` (a call like `real.setTimeout(...)` breaks every run).
+- The timer shims are what top-level code captures (`const st =
+  setTimeout`), so they must keep working after the replay: once the
+  run is live they forward to the real timers.
 - Top-level `await` in the user module currently gets the request
   cancelled with no output.
 - Uncaught errors go through `reportUncaught(err)` in
@@ -76,6 +79,10 @@ Single-context layout. See `docs/agents/domain.md`.
   export `then`: `import()` treats the namespace as a thenable and calls
   it inside the request (see `test/_hang.js`).
 - Each run starts a real workerd, roughly 100-300ms per test.
+- `RUN_LIMIT_MS` in the run helper is only a backstop and must stay
+  above the CLI's default timeout plus a cold workerd start. When it
+  kills the CLI the result is exit 143 with `signal` null, so
+  `signal === null` does not prove cfout exited by itself.
 - Check `npm run lint` by exit code, not by grepping for "error": eslint
   config errors are printed in prose.
 - Lint also covers the `test/_*.js` fixtures, and its
