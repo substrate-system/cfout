@@ -12,6 +12,7 @@ const RUN_LIMIT_MS = 4000
 
 interface RunResult {
     exitCode:number|null;
+    signal:NodeJS.Signals|null;
     stdout:string;
     stderr:string;
 }
@@ -45,9 +46,9 @@ function runSource (source:string, args:string[] = []):Promise<RunResult> {
         child.stdout.on('data', (d) => { stdout += d.toString() })
         child.stderr.on('data', (d) => { stderr += d.toString() })
         child.on('error', reject)
-        child.on('close', (exitCode) => {
+        child.on('close', (exitCode, signal) => {
             clearTimeout(timer)
-            resolve({ exitCode, stdout, stderr })
+            resolve({ exitCode, signal, stdout, stderr })
         })
         child.stdin.end(source)
     })
@@ -167,4 +168,14 @@ test('cfout --bogus prints an error to stderr and exits 1', async t => {
     const { exitCode, stderr } = await runSource('', ['--bogus'])
     t.equal(exitCode, 1, 'should exit 1')
     t.ok(stderr.includes('--bogus'), 'stderr should name the bad option')
+})
+
+test('a module that never finishes exits 1 at --timeout', async t => {
+    const { exitCode, signal, stdout, stderr } = await run('_hang.js',
+        ['--timeout', '500'])
+    t.equal(exitCode, 1, 'should exit 1')
+    t.equal(signal, null, 'cfout should exit by itself, not be killed')
+    t.ok(stdout.split('\n').includes('ok 1 - before the hang'),
+        'the line printed before the hang is on stdout')
+    t.ok(/timed out/i.test(stderr), 'stderr has a timeout message')
 })
