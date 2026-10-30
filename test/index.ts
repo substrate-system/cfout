@@ -78,3 +78,16 @@ test('setting testsFinished to a value other than true does not end the run',
         t.notEqual(summary.reason, 'testsFinished',
             'should not complete by the testsFinished rule')
     })
+
+test('console.log, info and debug go to stdout and not stderr', async t => {
+    const { exitCode, stdout, stderr } = await run('_stdout-methods.js')
+    t.equal(exitCode, 0, 'should exit 0')
+    for (const line of [
+        'ok 1 - from log',
+        'ok 2 - from info',
+        'ok 3 - from debug',
+    ]) {
+        t.ok(stdout.split('\n').includes(line), `stdout has "${line}"`)
+        t.ok(!stderr.includes(line), `stderr does not have "${line}"`)
+    }
+})
