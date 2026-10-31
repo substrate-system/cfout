@@ -1,6 +1,6 @@
 {
   "name": "@substrate-system/cfout",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "description": "Tests in the Cloudflare Workers runtime",
   "type": "module",
   "exports": {
@@ -32,7 +32,7 @@
     "toc": "markdown-toc --maxdepth 3 -i README.md",
     "preversion": "npm run lint",
     "postversion": "git push --follow-tags && npm publish",
-    "version": "npm run toc && auto-changelog -p --template keepachangelog --breaking-pattern 'BREAKING CHANGE:' && git add CHANGELOG.md README.md",
+    "version": "npm run toc && git add README.md",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
