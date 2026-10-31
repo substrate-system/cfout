@@ -2,16 +2,14 @@
 [![tests](https://img.shields.io/github/actions/workflow/status/substrate-system/cfout/nodejs.yml?style=flat-square)](https://github.com/substrate-system/cfout/actions/workflows/nodejs.yml)
 [![types](https://img.shields.io/npm/types/@substrate-system/cfout?style=flat-square)](README.md)
 [![module](https://img.shields.io/badge/module-ESM-blue?style=flat-square)](README.md)
+[![install size](https://flat.badgen.net/packagephobia/install/@substrate-system/cfout?cache-control=no-cache)](https://packagephobia.com/result?p=@substrate-system/cfout)
 [![semantic versioning](https://img.shields.io/badge/semver-2.0.0-blue?logo=semver&style=flat-square)](https://semver.org/)
 [![license](https://img.shields.io/badge/license-Big_Time-blue?style=flat-square)](LICENSE)
 
-Run tests in the Cloudflare Workers runtime. Pipe in a bundled test
-script, get TAP out, exit non-zero on failure.
+Run tests in the Cloudflare Workers runtime.
+Pipe in a bundled test script, get TAP out, exit non-zero on failure.
 
-Libraries that target Cloudflare Workers are usually tested in Node, so
-Node-only assumptions (missing globals, timers at module scope, Node
-built-ins) show up only after deploying. The usual way to test inside
-the real runtime (workerd) is vitest with
+The usual way to test inside the real runtime (workerd) is `vitest` with
 `@cloudflare/vitest-pool-workers`, which means adopting vitest, a vite
 config, a wrangler config and a pool plugin.
 
@@ -23,7 +21,29 @@ reflects the result. There is no config file. Flags mirror
 same thing for browsers.
 
 <details><summary><h2>Contents</h2></summary>
+
 <!-- toc -->
+
+- [Install](#install)
+- [Example](#example)
+- [Input](#input)
+- [CLI](#cli)
+  * [`-t, --timeout `](#-t---timeout-)
+  * [`--compat-date `](#--compat-date-)
+  * [`--compat-flag `](#--compat-flag-)
+  * [`--var `](#--var-)
+  * [`--env `](#--env-)
+  * [`-h, --help`](#-h---help)
+- [Output](#output)
+- [Completion](#completion)
+  * [Exit code](#exit-code)
+- [Variables](#variables)
+- [What is shimmed](#what-is-shimmed)
+- [Known limitations](#known-limitations)
+- [License](#license)
+
+<!-- tocstop -->
+
 </details>
 
 ## Install
@@ -40,9 +60,6 @@ which brings the workerd binary. wrangler is not needed.
 ```sh
 npx esbuild --bundle test/index.ts --format=esm | npx cfout | npx tap-spec
 ```
-
-With a test file written with
-[tapzero](https://github.com/substrate-system/tapzero):
 
 ```ts
 // test/index.ts
@@ -66,24 +83,15 @@ In `package.json`:
 
 ## Input
 
-stdin must be **one fully bundled ES module**.
+The input via `stdin` must be **one fully bundled ES module**.
 
-* No unresolved bare imports (`import x from 'some-package'`). Bundle
-  them in.
+* No unresolved bare imports (`import x from 'some-package'`).
 * Static imports of Node built-ins (`node:*`) are allowed, but only
   work with `--compat-flag nodejs_compat`. Mark them external when
   bundling:
-
   ```sh
-  npx esbuild --bundle test/index.ts --format=esm --external:'node:*' |
-      npx cfout --compat-flag nodejs_compat
+  npx esbuild --bundle test/index.ts --format=esm --external:'node:*' | npx cfout --compat-flag nodejs_compat
   ```
-
-* Top-level code runs the tests. tapzero style `test(...)` calls are the
-  main case.
-
-`cfout` does not bundle, transpile, or accept a file path. Bundling is
-the shell pipeline's job.
 
 ## CLI
 
@@ -100,6 +108,8 @@ Options:
   --compat-flag <name>       Compatibility flag, repeatable
   --var <KEY=VALUE>          Variable exposed as globalThis.env.KEY,
                              repeatable
+  --env <path>               .env file of variables, repeatable; --var
+                             overrides it
   -h, --help                 Show this help message
 ```
 
@@ -136,6 +146,18 @@ A string variable, exposed to the test as `globalThis.env.KEY`. Repeat
 it for more than one variable. The value is everything after the first
 `=`, so `--var A=b=c` sets `A` to `b=c`. See [variables](#variables).
 
+### `--env <path>`
+
+Load variables from a `.env` file, such as wrangler's `.dev.vars`. A
+relative path resolves against the current directory. The file uses
+dotenv syntax: `KEY=VALUE` lines, `#` comments, and quoted values.
+Repeat the flag to load more than one file. A later file overrides an
+earlier one, and `--var` overrides any file. A missing file is an error.
+
+```sh
+npx esbuild --bundle test/index.ts --format=esm | npx cfout --env .dev.vars
+```
+
 ### `-h, --help`
 
 Print the usage message.
@@ -154,13 +176,11 @@ workerd's own stderr is passed through to stderr.
 
 A run ends at the first of these:
 
-1. **`testsFinished`.** The test code sets
-   `globalThis.testsFinished = true`. Any other value is ignored.
+1. **`testsFinished`.** The test code sets `globalThis.testsFinished = true`.
 2. **A TAP plan.** A top-level plan line, `1..N`, optionally with a
-   directive (`1..0 # skip`). A plan after the test points ends the run
-   at once. A plan before them ends the run once N test points have been
-   seen. Indented (subtest) plans are ignored. When the run ends, if the
-   number of test points differs from the plan, cfout prints
+   directive (`1..0 # skip`). A plan before them ends the run once N test points
+   have been seen. Indented (subtest) plans are ignored. When the run ends,
+   if the number of test points differs from the plan, cfout prints
    `not ok - planned N tests but ran M`.
 3. **An uncaught error.** A throw during module evaluation, an
    `unhandledrejection` event, or a throw from a timer callback queued
@@ -171,13 +191,14 @@ A run ends at the first of these:
    shuts down workerd, prints `cfout: timed out after <ms>ms` to stderr
    and exits 1. Output printed before the timeout is already on stdout.
 
-tapzero prints a plan after its last test, so a tapzero suite ends by
+`tapzero` prints a plan after its last test, so a `tapzero` suite ends by
 rule 2 with no extra code. Other test code can log a plan or set
 `testsFinished`:
 
 ```js
-console.log('ok 1 - it works')
-globalThis.testsFinished = true
+test('all done', () => {
+  globalThis.testsFinished = true
+})
 ```
 
 There is no idle-based "auto finish" mode.
@@ -199,9 +220,10 @@ test passed. Use `console.warn` for diagnostics that should not fail.
 Pass string variables with `--var`:
 
 ```sh
-npx esbuild --bundle test/index.ts --format=esm |
-    npx cfout --var API_URL=http://localhost:8787 --var MODE=test
+npx esbuild --bundle test/index.ts --format=esm | npx cfout --var API_URL=http://localhost:8787 --var MODE=test
 ```
+
+Or load them from a `.env` file with `--env .dev.vars`.
 
 They arrive as the worker's `env` and are assigned to `globalThis.env`
 before your module is imported, so they can be read at module top level
@@ -244,10 +266,10 @@ that runs later, such as a test body.
 ## Known limitations
 
 * **Throws in late timers are not caught.** If a timer that was
-  scheduled *after* the initial replay (for example, from inside a
-  test) throws, workerd reports no error event to cfout and cancels the
+  scheduled *after* the initial replay (for example, from inside a test)
+  throws, workerd reports no error event to cfout and cancels the
   request. The run ends without a completion rule and exits 1, without a
-  `not ok - <message>` line. tapzero catches throws inside test bodies
+  `not ok - <message>` line. `tapzero` catches errors inside test bodies
   itself, so this only affects test code that schedules its own
   fire-and-forget timers.
 * **Rejections during module evaluation are not reported.** workerd
@@ -257,63 +279,6 @@ that runs later, such as a test body.
   Rejections that happen later, such as in an async test, are reported.
 * **Top-level `await` is not supported.** A module that uses top-level
   `await` gets its request cancelled with no output.
-
-## API
-
-The CLI is a thin wrapper around `runTestsInWorker`.
-
-```ts
-import { runTestsInWorker } from '@substrate-system/cfout'
-
-const { exitCode, summary } = await runTestsInWorker(source, {
-    stdout: text => process.stdout.write(text),
-    stderr: text => process.stderr.write(text),
-    timeout: 5000,
-    compatDate: '2026-07-01',
-    compatFlags: ['nodejs_compat'],
-    vars: { FOO: 'bar' },
-})
-```
-
-```ts
-function runTestsInWorker (
-    source:string,
-    options?:RunOptions
-):Promise<RunResult>
-
-type Writer = (text:string) => void
-
-interface RunOptions {
-    stdout?:Writer;  // default: discard
-    stderr?:Writer;  // default: discard
-    vars?:Record<string, string>;
-    compatDate?:string;  // YYYY-MM-DD
-    compatFlags?:string[];
-    timeout?:number;  // ms, default 5000
-}
-
-interface RunResult {
-    exitCode:0|1;
-    summary:CompletionSummary;
-}
-
-interface CompletionSummary {
-    // 'testsFinished', 'plan', 'uncaught', 'timeout', or null if the
-    // run ended without completing
-    reason:string|null;
-    notOk:number;  // number of `not ok` lines on stdout
-    consoleErrors:number;  // number of `console.error` calls
-}
-```
-
-`source` is the bundled module as a string. `runTestsInWorker` writes
-nothing to the process streams itself, only through the writers you
-pass. Unlike the CLI, it does not validate `compatDate` or `timeout`.
-
-Also exported:
-
-* `DEFAULT_TIMEOUT`, `5000`.
-* `newestCompatDate()`, the default compatibility date as `YYYY-MM-DD`.
 
 ## License
 
