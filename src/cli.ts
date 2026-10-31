@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { readFileSync } from 'node:fs'
+import { parseEnv } from 'node:util'
 import { runTestsInWorker, DEFAULT_TIMEOUT } from './index.js'
 
 // Each later flag adds its line here alongside its case in parseArgs.
@@ -14,12 +16,16 @@ Options:
   --compat-flag <name>       Compatibility flag, repeatable
   --var <KEY=VALUE>          Variable exposed as globalThis.env.KEY,
                              repeatable
+  --env <path>               .env file of variables, repeatable; --var
+                             overrides it
   -h, --help                 Show this help message
 `
 
 interface CliArgs {
     help:boolean;
     vars:Record<string, string>;
+    /** Variables from --env files, overridden by --var */
+    fileVars:Record<string, string>;
     compatDate?:string;
     compatFlags:string[];
     timeout:number;
@@ -31,6 +37,7 @@ function parseArgs (argv:string[]):CliArgs {
     const args:CliArgs = {
         help: false,
         vars: {},
+        fileVars: {},
         compatFlags: [],
         timeout: DEFAULT_TIMEOUT,
     }
@@ -53,6 +60,10 @@ function parseArgs (argv:string[]):CliArgs {
                 args.vars[value.slice(0, eq)] = value.slice(eq + 1)
                 break
             }
+            case '--env':
+                // a later file overrides an earlier one
+                Object.assign(args.fileVars, readEnvFile(argv[++i]))
+                break
             case '--compat-date':
                 args.compatDate = parseCompatDate(argv[++i])
                 break
@@ -91,6 +102,20 @@ function parseTimeout (flag:string, value:string|undefined):number {
         )
     }
     return ms
+}
+
+function readEnvFile (filePath:string|undefined):Record<string, string> {
+    if (filePath === undefined || filePath === '') {
+        throw new ArgError('--env requires a path')
+    }
+    let text:string
+    try {
+        text = readFileSync(filePath, 'utf8')
+    } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err)
+        throw new ArgError(`Cannot read --env file: ${reason}`)
+    }
+    return parseEnv(text) as Record<string, string>
 }
 
 function parseCompatDate (value:string|undefined):string {
@@ -136,7 +161,7 @@ async function main () {
 
     const source = await readStdin()
     const { exitCode } = await runTestsInWorker(source, {
-        vars: args.vars,
+        vars: { ...args.fileVars, ...args.vars },
         compatDate: args.compatDate,
         compatFlags: args.compatFlags,
         stdout: text => { process.stdout.write(text) },

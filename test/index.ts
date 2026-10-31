@@ -170,6 +170,51 @@ test('globalThis.env is readable at module top level', async t => {
     t.deepEqual(env, { FOO: 'bar' }, 'top-level code sees the var')
 })
 
+test('--env loads the variables in a .env file', async t => {
+    const env = await envAtTopLevel(['--env', 'test/_env-file.vars'])
+    t.deepEqual(env, { FOO: 'bar', QUOTED: 'hello world' },
+        'env should have every variable in the file')
+})
+
+test('--var overrides the same name from --env in either order',
+    async t => {
+        const expected = { FOO: 'from-var', QUOTED: 'hello world' }
+        const varFirst = await envAtTopLevel([
+            '--var', 'FOO=from-var', '--env', 'test/_env-file.vars',
+        ])
+        t.deepEqual(varFirst, expected, '--var before --env should win')
+        const envFirst = await envAtTopLevel([
+            '--env', 'test/_env-file.vars', '--var', 'FOO=from-var',
+        ])
+        t.deepEqual(envFirst, expected, '--var after --env should win')
+    })
+
+test('a later --env file overrides an earlier one', async t => {
+    const env = await envAtTopLevel([
+        '--env', 'test/_env-file.vars', '--env', 'test/_env-file-2.vars',
+    ])
+    t.deepEqual(env, { FOO: 'second', QUOTED: 'hello world', EXTRA: '1' },
+        'env should merge both files, the later file winning')
+})
+
+test('--env with a missing file or no path exits 1 with an error',
+    async t => {
+        for (const args of [
+            ['--env', 'test/_does-not-exist.vars'],
+            ['--env'],
+        ]) {
+            const { exitCode, stdout, stderr } = await runSource(
+                await bundle('_pass.js'),
+                args
+            )
+            t.equal(exitCode, 1, `${args.join(' ')} should exit 1`)
+            // an argument error, not a crash with a stack
+            t.ok(stderr.startsWith('Error:'),
+                `${args.join(' ')} should print an argument error`)
+            t.equal(stdout, '', 'nothing should run')
+        }
+    })
+
 test('--var without = or with an empty key exits 1 with an error',
     async t => {
         for (const value of ['NOEQUALS', '=x']) {

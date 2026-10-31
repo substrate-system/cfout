@@ -32,6 +32,7 @@ same thing for browsers.
   * [`--compat-date `](#--compat-date-)
   * [`--compat-flag `](#--compat-flag-)
   * [`--var `](#--var-)
+  * [`--env `](#--env-)
   * [`-h, --help`](#-h---help)
 - [Output](#output)
 - [Completion](#completion)
@@ -39,7 +40,6 @@ same thing for browsers.
 - [Variables](#variables)
 - [What is shimmed](#what-is-shimmed)
 - [Known limitations](#known-limitations)
-- [API](#api)
 - [License](#license)
 
 <!-- tocstop -->
@@ -108,6 +108,8 @@ Options:
   --compat-flag <name>       Compatibility flag, repeatable
   --var <KEY=VALUE>          Variable exposed as globalThis.env.KEY,
                              repeatable
+  --env <path>               .env file of variables, repeatable; --var
+                             overrides it
   -h, --help                 Show this help message
 ```
 
@@ -143,6 +145,18 @@ npx cfout --compat-flag nodejs_compat --compat-flag no_global_navigator
 A string variable, exposed to the test as `globalThis.env.KEY`. Repeat
 it for more than one variable. The value is everything after the first
 `=`, so `--var A=b=c` sets `A` to `b=c`. See [variables](#variables).
+
+### `--env <path>`
+
+Load variables from a `.env` file, such as wrangler's `.dev.vars`. A
+relative path resolves against the current directory. The file uses
+dotenv syntax: `KEY=VALUE` lines, `#` comments, and quoted values.
+Repeat the flag to load more than one file. A later file overrides an
+earlier one, and `--var` overrides any file. A missing file is an error.
+
+```sh
+npx esbuild --bundle test/index.ts --format=esm | npx cfout --env .dev.vars
+```
 
 ### `-h, --help`
 
@@ -208,6 +222,8 @@ Pass string variables with `--var`:
 ```sh
 npx esbuild --bundle test/index.ts --format=esm | npx cfout --var API_URL=http://localhost:8787 --var MODE=test
 ```
+
+Or load them from a `.env` file with `--env .dev.vars`.
 
 They arrive as the worker's `env` and are assigned to `globalThis.env`
 before your module is imported, so they can be read at module top level
